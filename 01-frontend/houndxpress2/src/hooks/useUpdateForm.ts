@@ -2,7 +2,7 @@ import { SetStateAction, useState } from "react";
 import validateFields from "./useValidateFields";
 import { Guide } from "../components/GuideReguister/types";
 import { useAppDispatch } from "./useStoreTypes";
-import { updateGuide } from "../state/guides.slice";
+// import { updateGuide } from "../state/guides.slice";
 
 const useUpdateForm = () => {
   //Redux state
@@ -35,7 +35,7 @@ const useUpdateForm = () => {
     };
 
     //Update with Redux
-    dispatch(updateGuide(newGuideStage));
+    // dispatch(updateGuide(newGuideStage));
     alert("Guía registrada con éxito");
     //clean the form
     form.reset();

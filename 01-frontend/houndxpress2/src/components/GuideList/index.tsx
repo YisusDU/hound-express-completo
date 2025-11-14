@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   GuideListContainer,
   GuideFilter,
@@ -9,8 +9,10 @@ import {
 } from "./styles";
 import useDraggTable from "../../hooks/useDraggTable";
 import { useAppSelector, useAppDispatch } from "../../hooks/useStoreTypes";
-import { changeModalData } from "../../state/guides.slice";
+import { changeModalData, fetchGuides } from "../../state/guides.slice";
 import { useModalGuides } from "../../hooks/useModalGuides";
+import { ASYNC_STATUS } from "../../constants/asyncStatus";
+import ServerError from "../ServerError";
 
 const GuideList = () => {
   //Variables to aply some filter
@@ -21,6 +23,8 @@ const GuideList = () => {
 
   //Redux state
   const guides = useAppSelector((state) => state.guides.guides);
+  const status = useAppSelector((state) => state.guides.status);
+  const error = useAppSelector((state) => state.guides.error);
   const dispatch = useAppDispatch();
   const updateButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
   type ModalType = "History" | "Update";
@@ -31,11 +35,23 @@ const GuideList = () => {
     // Guardar el botón activo para usarlo luego
   };
 
-  //Aply some filter
-  const filteredGuides = guides.filter((g) => {
-    const lastStatus = g.guide__stage[g.guide__stage.length - 1]?.guide__status;
-    return filter === "" || lastStatus === filter;
-  });
+  // Disparamos la operación asíncrona para listar guías
+  useEffect(() => {
+    status === ASYNC_STATUS.IDLE && dispatch(fetchGuides());
+  }, [dispatch, status]);
+
+  // Filtrar guías por estatus
+  const filteredGuides = useMemo(() => {
+    const cleanFilter = filter.toLowerCase();
+
+    // Si el filtro está vacío, devuelve todas
+    if (cleanFilter === "") {
+      return guides;
+    }
+
+    // Si no, filtra por coincidencia exacta
+    return guides.filter((g) => g.current_status.toLowerCase() === cleanFilter);
+  }, [guides, filter]);
 
   //Function for accesibility of aria-expanded
   const [ariaExpanded, setAriaExpanded] = useState(false);
@@ -69,18 +85,10 @@ const GuideList = () => {
           aria-label="Filtrar por estado de envío:"
           title="Filtrar por estado de envío:"
         >
-          <option value="">
-            Mostrar todos
-          </option>
-          <option value="Pendiente">
-            Pendientes
-          </option>
-          <option value="En tránsito">
-            En tránsito
-          </option>
-          <option value="Entregado">
-            Entregados
-          </option>
+          <option value="">Mostrar todos</option>
+          <option value="Pendiente">Pendientes</option>
+          <option value="En tránsito">En tránsito</option>
+          <option value="Entregado">Entregados</option>
         </select>
         <button
           type="button"
@@ -109,80 +117,90 @@ const GuideList = () => {
             </tr>
           </TableHeader>
           <tbody data-testid="table-body" className="table__body">
-            {filteredGuides.map((g, index) => (
-              <tr className="guide__table--row" key={g.guide__number}>
-                <TableData
-                  className="guide__table--data"
-                  data-label="Número de guía"
-                >
-                  {g.guide__number}
-                </TableData>
-
-                <TableData
-                  className="guide__table--data"
-                  data-label="Estado actual"
-                >
-                  {g.guide__stage[g.guide__stage.length - 1].guide__status}
-                </TableData>
-
-                <TableData className="guide__table--data" data-label="Origen">
-                  {g.guide__origin}
-                </TableData>
-
-                <TableData className="guide__table--data" data-label="Destino">
-                  {g.guide__destination}
-                </TableData>
-
-                <TableData
-                  className="guide__table--data"
-                  data-label="Destinatario"
-                >
-                  {g.guide__recipient}
-                </TableData>
-
-                <TableData className="guide__table--data" data-label="Fecha">
-                  {g.guide__stage[g.guide__stage.length - 1].guide__date}
-                </TableData>
-
-                <TableButtonsContainer
-                  className="guide__table--data list__buttonsContainer"
-                  data-label="Opciones"
-                >
-                  <button
-                    ref={(el) => {
-                      updateButtonRefs.current[index] = el;
-                    }}
-                    className="guide__button guideButton--seeHistory"
-                    onClick={() => openModal(g.guide__number, "History")}
-                    type="button"
-                    role="button"
-                    aria-label={`Ver historial de la guía ${g.guide__number}`}
-                    title={`Ver historial de la guía ${g.guide__number}`}
-                    aria-haspopup="dialog"
-                    aria-controls="modalHistory"
-                    aria-expanded={ariaExpanded ? true : false}
+            {status === ASYNC_STATUS.FULFILLED &&
+              filteredGuides.map((g, index) => (
+                <tr className="guide__table--row" key={g.guide_number}>
+                  <TableData
+                    className="guide__table--data"
+                    data-label="Número de guía"
                   >
-                    Ver Historial
-                  </button>
-                  <button
-                    ref={(el) => {
-                      updateButtonRefs.current[index] = el;
-                    }}
-                    className="guide__button guide__button--updateState"
-                    onClick={() => openModal(g.guide__number, "Update")}
-                    type="button"
-                    role="button"
-                    aria-label={`Actualizar estado de la guía ${g.guide__number}`}
-                    title={`Actualizar estado de la guía ${g.guide__number}`}
-                    aria-haspopup="dialog"
-                    aria-controls="modalUpdate"
-                    aria-expanded={ariaExpanded ? true : false}
+                    {g.guide_number}
+                  </TableData>
+
+                  <TableData
+                    className="guide__table--data"
+                    data-label="Estado actual"
                   >
-                    Actualizar Estado
-                  </button>
-                </TableButtonsContainer>
-              </tr>
-            ))}
+                    {g.current_status}
+                  </TableData>
+
+                  <TableData className="guide__table--data" data-label="Origen">
+                    {g.guide_origin}
+                  </TableData>
+
+                  <TableData
+                    className="guide__table--data"
+                    data-label="Destino"
+                  >
+                    {g.guide_destination}
+                  </TableData>
+
+                  <TableData
+                    className="guide__table--data"
+                    data-label="Destinatario"
+                  >
+                    {g.guide_recipient}
+                  </TableData>
+
+                  <TableData className="guide__table--data" data-label="Fecha">
+                    {g.updated_at}
+                  </TableData>
+
+                  <TableButtonsContainer
+                    className="guide__table--data list__buttonsContainer"
+                    data-label="Opciones"
+                  >
+                    <button
+                      ref={(el) => {
+                        updateButtonRefs.current[index] = el;
+                      }}
+                      className="guide__button guideButton--seeHistory"
+                      onClick={() => openModal(g.guide_number, "History")}
+                      type="button"
+                      role="button"
+                      aria-label={`Ver historial de la guía ${g.guide_number}`}
+                      title={`Ver historial de la guía ${g.guide_number}`}
+                      aria-haspopup="dialog"
+                      aria-controls="modalHistory"
+                      aria-expanded={ariaExpanded ? true : false}
+                    >
+                      Ver Historial
+                    </button>
+                    <button
+                      ref={(el) => {
+                        updateButtonRefs.current[index] = el;
+                      }}
+                      className="guide__button guide__button--updateState"
+                      onClick={() => openModal(g.guide_number, "Update")}
+                      type="button"
+                      role="button"
+                      aria-label={`Actualizar estado de la guía ${g.guide_number}`}
+                      title={`Actualizar estado de la guía ${g.guide_number}`}
+                      aria-haspopup="dialog"
+                      aria-controls="modalUpdate"
+                      aria-expanded={ariaExpanded ? true : false}
+                    >
+                      Actualizar Estado
+                    </button>
+                  </TableButtonsContainer>
+                </tr>
+              ))}
+            {status === ASYNC_STATUS.PENDING && (
+              <div>
+                <h2>Loading... 🥱</h2>
+              </div>
+            )}
+            {status === ASYNC_STATUS.REJECTED && <ServerError error={error} />}
           </tbody>
         </GuideTable>
       </section>

@@ -1,14 +1,11 @@
 import React from "react";
 import { useState } from "react";
 import { useAppDispatch, useAppSelector } from "./useStoreTypes";
-import { addGuide, createGuide } from "../state/guides.slice";
+import { /* addGuide, */ createGuide } from "../state/guides.slice";
 import validateFields from "./useValidateFields";
-import { Guide } from "../types/guides";
-import { ApiError, GuideFormPayload } from "../state/types";
+import { ApiError, ApiGuidePayload, GuideFormPayload } from "../state/types";
 
 const useGuideRegister = () => {
-  const error = useAppSelector((state) => state.guides.error);
-  const status = useAppSelector((state) => state.guides.status);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   //Redux dispatch:
@@ -24,7 +21,7 @@ const useGuideRegister = () => {
     const guideNumber = (formData.get("guide__number") as string)?.trim();
 
     const existingGuide = guides.some(
-      (guide: Guide) => guide["guide__number"] === guideNumber
+      (guide: ApiGuidePayload) => guide["guide_number"] === guideNumber
     );
     // console.log("existingGuide", existingGuide);
 
@@ -95,44 +92,7 @@ const useGuideRegister = () => {
     }
   };
 
-  // Esta función decide cómo renderizar el error
-  const renderServerError = () => {
-    // Si no hay error, no renderiza nada
-    if (!error) return null;
-
-    // --- CASO 1: El error es un string simple ---
-    // (Ej: "Network Error", "No encontrado", etc.)
-    if (typeof error === "string") {
-      return (
-        <div className="server-error" role="alert">
-          {error}
-        </div>
-      );
-    }
-
-    // --- CASO 2: El error es un objeto ApiError ---
-    // (Ej: { guide_number: ["Este campo..."], ... })
-    // Lo recorremos y mostramos cada error de campo
-    return (
-      <div className="server-error" role="alert">
-        <strong>Por favor, corrige los siguientes errores:</strong>
-        <ul>
-          {Object.entries(error).map(([field, messages]) => (
-            <li key={field}>
-              {/* `messages` puede ser string[] o string (para "detail") */}
-              {Array.isArray(messages) ? (
-                messages.map((msg, idx) => <span key={idx}>{msg}</span>)
-              ) : (
-                <span>{messages}</span>
-              )}
-            </li>
-          ))}
-        </ul>
-      </div>
-    );
-  };
-
-  return { errors, handleValidate, setErrors, renderServerError };
+  return { errors, handleValidate, setErrors };
 };
 
 export { useGuideRegister };

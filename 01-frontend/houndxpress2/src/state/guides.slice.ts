@@ -1,26 +1,28 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import {
-  ApiCreateGuide,
   ApiError,
+  ApiGuidePayload,
   GuideFormPayload,
   GuidesState,
   InfoModalData,
 } from "./types";
 import { Guide } from "../types/guides";
 import { GuideStage } from "../components/GuideReguister/types";
-import { CREATE_GUIDE } from "../constants/actionTypes";
+import { CREATE_GUIDE, FETCH_GUIDES } from "../constants/actionTypes";
 import axios from "axios";
 import api from "../api";
 import { ASYNC_STATUS } from "../constants/asyncStatus";
 
 // Peticiones asíncronas
+
+// Crear guías
 export const createGuide = createAsyncThunk<
-  ApiCreateGuide,
+  ApiGuidePayload,
   GuideFormPayload,
   { rejectValue: ApiError | string }
 >(CREATE_GUIDE, async (guidePayload, { rejectWithValue }) => {
   try {
-    const response = await api.post<ApiCreateGuide>(
+    const response = await api.post<ApiGuidePayload>(
       "/api/v1/guides/",
       guidePayload
     );
@@ -43,95 +45,30 @@ export const createGuide = createAsyncThunk<
   }
 });
 
+// Listar guías
+export const fetchGuides = createAsyncThunk<
+  ApiGuidePayload[],
+  void,
+  { rejectValue: ApiError | string }
+>(FETCH_GUIDES, async (_, { rejectWithValue }) => {
+  try {
+    const response = await api.get<ApiGuidePayload[]>("/api/v1/guides/");
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      if (!error.response) {
+        return rejectWithValue(error.message);
+      }
+      return rejectWithValue(error.response.data as ApiError);
+    } else {
+      return rejectWithValue("Ocurrió un error inesperado");
+    }
+  }
+});
+
 //Global Initial State
 const initialState: GuidesState = {
-  guides: [
-    {
-      guide__number: "12345678",
-      guide__origin: "Detroit",
-      guide__destination: "Atlanta",
-      guide__recipient: "Rick",
-      guide__stage: [
-        {
-          guide__date: "2025-05-25",
-          guide__status: "Pendiente",
-          guide__hour: "12:34",
-        },
-      ],
-    },
-    {
-      guide__number: "12345",
-      guide__origin: "Ciudad A",
-      guide__destination: "Ciudad B",
-      guide__recipient: "Persona X",
-      guide__stage: [
-        {
-          guide__date: "2023-10-01",
-          guide__status: "Pendiente",
-          guide__hour: "09:15",
-        },
-        {
-          guide__date: "2023-10-02",
-          guide__status: "En tránsito",
-          guide__hour: "17:42",
-        },
-      ],
-    },
-    {
-      guide__number: "67890",
-      guide__origin: "Ciudad C",
-      guide__destination: "Ciudad D",
-      guide__recipient: "Persona Y",
-      guide__stage: [
-        {
-          guide__date: "2023-10-01",
-          guide__status: "Pendiente",
-          guide__hour: "08:23",
-        },
-        {
-          guide__date: "2023-10-02",
-          guide__status: "En tránsito",
-          guide__hour: "19:08",
-        },
-      ],
-    },
-    {
-      guide__number: "54321",
-      guide__origin: "Ciudad E",
-      guide__destination: "Ciudad F",
-      guide__recipient: "Persona Z",
-      guide__stage: [
-        {
-          guide__date: "2023-09-28",
-          guide__status: "Pendiente",
-          guide__hour: "10:55",
-        },
-        {
-          guide__date: "2023-09-29",
-          guide__status: "En tránsito",
-          guide__hour: "14:27",
-        },
-        {
-          guide__date: "2023-09-30",
-          guide__status: "Entregado",
-          guide__hour: "18:36",
-        },
-      ],
-    },
-    {
-      guide__number: "98765",
-      guide__origin: "Ciudad G",
-      guide__destination: "Ciudad H",
-      guide__recipient: "Persona N",
-      guide__stage: [
-        {
-          guide__date: "2023-10-03",
-          guide__status: "Pendiente",
-          guide__hour: "15:02",
-        },
-      ],
-    },
-  ],
+  guides: [],
   menuDisplay: false,
   modalData: { guideNumber: "", typeModal: "" },
   status: ASYNC_STATUS.IDLE,
@@ -142,17 +79,17 @@ const guidesSlice = createSlice({
   name: "guidesState",
   initialState,
   reducers: {
-    addGuide: (state, action: PayloadAction<Guide>) => {
-      state.guides.unshift(action.payload);
-    },
-    updateGuide: (state, action: PayloadAction<GuideStage>) => {
-      const guide = state.guides.find(
-        (g) => g.guide__number === state.modalData.guideNumber
-      );
-      if (guide) {
-        guide.guide__stage.push(action.payload);
-      }
-    },
+    // addGuide: (state, action: PayloadAction<Guide>) => {
+    //   state.guides.unshift(action.payload);
+    // },
+    // updateGuide: (state, action: PayloadAction<GuideStage>) => {
+    //   const guide = state.guides.find(
+    //     (g) => g.guide_number === state.modalData.guideNumber
+    //   );
+    //   if (guide) {
+    //     guide.guide_stage.push(action.payload);
+    //   }
+    // },
     toggleMenu: (state, action: PayloadAction<boolean>) => {
       state.menuDisplay = action.payload;
     },
@@ -162,6 +99,7 @@ const guidesSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      // Crear guías
       .addCase(createGuide.pending, (state) => {
         state.status = ASYNC_STATUS.PENDING;
       })
@@ -177,12 +115,28 @@ const guidesSlice = createSlice({
           // Si es un error no manejado, usa .error.message
           state.error = action.error.message || "Ocurrió un error desconocido";
         }
+      })
+      // Listar guías
+      .addCase(fetchGuides.pending, (state) => {
+        state.status = ASYNC_STATUS.PENDING;
+      })
+      .addCase(fetchGuides.fulfilled, (state, action) => {
+        state.status = ASYNC_STATUS.FULFILLED;
+        state.guides = action.payload;
+      })
+      .addCase(fetchGuides.rejected, (state, action) => {
+        state.status = ASYNC_STATUS.REJECTED;
+        if (action.payload) {
+          state.error = action.payload;
+        } else {
+          state.error = action.error.message || "Ocurrió un error desconocido";
+        }
       });
   },
 });
 
 //Actions by name
-export const { addGuide, toggleMenu, changeModalData, updateGuide } =
+export const { /* addGuide, */ toggleMenu, changeModalData /* updateGuide */ } =
   guidesSlice.actions;
 
 //Reducer for the store

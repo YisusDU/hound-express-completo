@@ -11,11 +11,12 @@ import {
 import { useCleanErrorOnFocus } from "../../hooks/useCleanErrorOnFocus";
 import { useAppSelector } from "../../hooks/useStoreTypes";
 import { ASYNC_STATUS } from "../../constants/asyncStatus";
+import ServerError from "../ServerError";
 
 const GuideRegister = () => {
-  const { errors, handleValidate, setErrors, renderServerError } = useGuideRegister();
+  const { errors, handleValidate, setErrors } = useGuideRegister();
   const cleanErrorOnFocus = useCleanErrorOnFocus(errors, setErrors);
-  
+  const status = useAppSelector((state) => state.guides.status);
 
   return (
     <GuideRegisterContainer className="guide__register" id="guide__register">
@@ -135,6 +136,7 @@ const GuideRegister = () => {
             Enviar
           </GuideSubmit>
         </GuideForm>
+        {status === ASYNC_STATUS.REJECTED && <ServerError error={errors} />}
       </GuideContainer>
 
       {/* <!--Animacion--> */}
@@ -170,7 +172,6 @@ const GuideRegister = () => {
           aria-hidden="true"
         />
       </GuideAnimation>
-      {status === ASYNC_STATUS.REJECTED && renderServerError()}
     </GuideRegisterContainer>
   );
 };

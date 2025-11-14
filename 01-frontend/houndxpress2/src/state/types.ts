@@ -1,7 +1,7 @@
 import { Guide } from "../types/guides";
 
 export interface GuidesState {
-  guides: Guide[];
+  guides: ApiGuidePayload[];
   menuDisplay: boolean;
   modalData: InfoModalData;
   status: string;
@@ -14,7 +14,7 @@ export interface InfoModalData {
 }
 
 // Lo que la API devuelve al crear una guía
-export interface ApiCreateGuide {
+export interface ApiGuidePayload {
   id: number;
   guide_number: string;
   guide_origin: string;
