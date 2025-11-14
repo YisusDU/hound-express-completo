@@ -24,7 +24,7 @@ class GuideSerializer(ModelSerializer):
             'guide_destination': {'label': 'Destino'},
             'current_status': {'label': 'Estado Actual'},
         }
-        read_only_fields = ['id', "current_status"]
+        read_only_fields = ['id', "current_status", "created_at",]
 
     def validate(self, data):
         """Validación de múltiples campos"""

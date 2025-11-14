@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useAppDispatch, useAppSelector } from "./useStoreTypes";
-import { addGuide } from "../state/guides.slice";
+import { addGuide, createGuide } from "../state/guides.slice";
 import validateFields from "./useValidateFields";
 import { Guide } from "../types/guides";
+import { GuideFormPayload } from "../state/types";
 
 const useGuideRegister = () => {
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -39,9 +40,6 @@ const useGuideRegister = () => {
       "guide__origin",
       "guide__destination",
       "guide__recipient",
-      "guide__date",
-      "guide__hour",
-      "guide__status",
     ];
 
     const { isValid } = validateFields(requiredFields, formData, setErrors);
@@ -54,27 +52,25 @@ const useGuideRegister = () => {
     }
 
     //Take the info into an object
-    const guideData: Guide = {
-      guide__number: (formData.get("guide__number") as string)?.trim() || "",
-      guide__origin: (formData.get("guide__origin") as string)?.trim() || "",
-      guide__destination:
+    const guideData: GuideFormPayload = {
+      guide_number: (formData.get("guide__number") as string)?.trim() || "",
+      guide_origin: (formData.get("guide__origin") as string)?.trim() || "",
+      guide_destination:
         (formData.get("guide__destination") as string)?.trim() || "",
-      guide__recipient:
+      guide_recipient:
         (formData.get("guide__recipient") as string)?.trim() || "",
-      guide__stage: [
-        {
-          guide__date: (formData.get("guide__date") as string)?.trim() || "",
-          guide__status:
-            (formData.get("guide__status") as string)?.trim() || "",
-          guide__hour: (formData.get("guide__hour") as string)?.trim() || "",
-        },
-      ],
     };
 
     //Redux dispatch:
-    dispatch(addGuide(guideData));
+    // dispatch(addGuide(guideData));
 
-    alert("Guía registrada con éxito");
+    try {
+      await dispatch(createGuide(guideData)).unwrap();
+      alert("Guía registrada con éxito");
+    } catch (error) {
+      console.error("Failed to create order:", error);
+      alert("There was an error creating your order. Please try again.");
+    }
 
     //clean the form
     form.reset();

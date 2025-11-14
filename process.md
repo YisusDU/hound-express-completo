@@ -380,3 +380,211 @@ class EstatusSerializer(ModelSerializer):
       
         return instance
 ```
+
+## CORS
+
+Como aprendimos en el proyecto pasado, es necesario instalar CORS antes de intentar peticiones desde el frontend al backend, pues será bloqueadas por el el navegador
+
+Comando para instalar cors en el backend, con la consola del contenedor y debemos añadirlo al listado de requerimientos
+
+> `pip install django-cors-headers`
+
+Lo añadimos a los requerimientos
+
+- proyect-partner-company-m66\02-backend\houndxpress3\pyproject.toml
+
+```toml
+[project]
+name = "hello"
+version = "0.1.0"
+description = "An example Django app running in Docker."
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+  "django==5.2.4",
+  "celery==5.5.3",
+  "django-debug-toolbar==6.0.0",
+  "gunicorn==23.0.0",
+  "psycopg==3.2.9",
+  "redis==6.2.0",
+  "ruff==0.12.7",
+  "setuptools==80.9.0",
+  "whitenoise==6.9.0",
+  "djangorestframework==3.16.1",
+  "django-cors-headers==4.9.0"
+]
+
+[tool.ruff]
+line-length = 79
+
+[tool.ruff.lint]
+extend-select = ["I", "SIM"]
+
+```
+
+Lo añadimos en el settings a las apps instaladas
+
+- \proyect-partner-company-m66\02-backend\houndxpress3\src\config\settings.py
+
+```python
+# Application definitions
+INSTALLED_APPS = [
+    'corsheaders', #<--- Para cors
+    "rest_framework", 
+    "api.apps.ApiConfig", 
+    "houndexpress.apps.HoundexpressConfig", 
+    "pages.apps.PagesConfig",
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+]
+```
+
+Lo añadimos al middleware del mismo settings.py
+
+- \proyect-partner-company-m66\02-backend\houndxpress3\src\config\settings.py
+
+```python 
+MIDDLEWARE = [
+    "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    'corsheaders.middleware.CorsMiddleware', # <--- CORS
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+]
+```
+
+Y los dominios permitidos
+
+- \proyect-partner-company-m66\02-backend\houndxpress3\src\config\settings.py
+
+```python
+# Lista de dominios que pueden hacer peticiones
+CORS_ALLOWED_ORIGINS = [
+    "https://yisusdu.github.io",  # Tu frontend en producción
+    "http://localhost:3000",         # Tu frontend local
+]
+```
+
+# Crear guías
+
+Considero que podemos hacer primero lo necesario para hacer las peticiones HTTP Post para crear guías, con el mismo formulario, peeero modificandolo un poco,pues la hora y el día se agregan en automático
+
+### Serializer
+
+Hice una pequeña correción en el serializer para que el campo de created_at no sea parte del formulario pero sí sea visible
+
+- \proyect-partner-company-m66\02-backend\houndxpress3\src\houndexpress\serializers.py
+
+```python
+class GuideSerializer(ModelSerializer):
+    class Meta:
+        model = Guia
+        fields = [
+            "id",
+            "guide_number",
+            "guide_origin",
+            "guide_destination",
+            "guide_recipient",
+            "current_status",
+            "created_at",
+            "updated_at"
+        ]
+        extra_kwargs = {
+            'guide_number': {'label': 'Número de Seguimiento'},
+            'guide_origin': {'label': 'Origen'},
+            'guide_destination': {'label': 'Destino'},
+            'current_status': {'label': 'Estado Actual'},
+        }
+        read_only_fields = ['id', "current_status", "created_at",]
+```
+
+### Carpeta para evitar hardcodear términos
+
+He copiado y agregado a src la carpeta que usamos para constantes y acciones asíncronas
+
+### Carpeta con dirección url base de la API
+
+Para evitar repetir la dirección de la api todo el tiempo, creamos una carpeta api en src con el siguiente archivo el cual nos pide instalar axios
+
+- \proyect-partner-company-m66\01-frontend\houndxpress2\src\api\index.ts
+
+```ts
+import axios from "axios";
+
+// 1. Obtenemos la variable de entorno (versión CRA)
+const API_URL = process.env.REACT_APP_API_BASE_URL;
+
+// 2. Validamos que exista
+if (!API_URL) {
+  console.error(
+    "¡Error! REACT_APP_API_BASE_URL no está definida en el archivo .env"
+  );
+  // Lanzar un error detiene la ejecución de la app si la API es crítica
+  throw new Error(
+    "Configuración de entorno faltante: REACT_APP_API_BASE_URL"
+  );
+}
+
+// 3. Si existe, la usamos con confianza
+const api = axios.create({
+  baseURL: API_URL,
+});
+
+export default api;
+```
+
+#### .env
+
+Para el archivo anterior, dependemos de un archivo de entorno, el cual creamos  y deifinimos en src
+
+- \proyect-partner-company-m66\01-frontend\houndxpress2\.env
+
+```env
+REACT_APP_API_BASE_URL=http://127.0.0.1:8000
+```
+
+Y añadimos la excepción al gitignore
+
+- \proyect-partner-company-m66\01-frontend\houndxpress2\.gitignore
+
+```gitignore
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# testing
+/coverage
+
+# production
+/build
+
+# misc
+.DS_Store
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Variables de entorno locales
+.env
+
+```
+
+Ahora sí instalamos axios
+
+> npm install axios

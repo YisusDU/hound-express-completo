@@ -7,12 +7,15 @@ import { Provider } from "react-redux";
 import { configureStore } from "@reduxjs/toolkit";
 import guidesReducer from "../../state/guides.slice";
 import { GuidesState } from "../../state/types";
+import { ASYNC_STATUS } from "../../constants/asyncStatus";
 
 // Create a Redux store with the guides reducer and preloaded state
 const defaultState: GuidesState = {
   guides: [],
   menuDisplay: false,
   modalData: { guideNumber: "", typeModal: "" },
+  status: ASYNC_STATUS.IDLE,
+  error: null
 };
 
 const renderWithStore = (overrides = {}) => {

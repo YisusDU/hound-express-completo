@@ -32,7 +32,7 @@ class GuideViewSet(ViewSet):
             data = serializer.errors
             return Response({"data": data}, status=status.HTTP_400_BAD_REQUEST)
         
-        serializer.save(currentStatus="Pendiente")
+        serializer.save(current_status="Pendiente")
         message = "Creando una guia"
         data = serializer.data
         return Response({"message": message, "data": data}, status=status.HTTP_201_CREATED)

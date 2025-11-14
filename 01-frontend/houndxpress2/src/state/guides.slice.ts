@@ -1,7 +1,47 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { GuidesState, InfoModalData } from "./types";
+import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import {
+  ApiCreateGuide,
+  ApiError,
+  GuideFormPayload,
+  GuidesState,
+  InfoModalData,
+} from "./types";
 import { Guide } from "../types/guides";
 import { GuideStage } from "../components/GuideReguister/types";
+import { CREATE_GUIDE } from "../constants/actionTypes";
+import axios from "axios";
+import api from "../api";
+import { ASYNC_STATUS } from "../constants/asyncStatus";
+
+// Peticiones asíncronas
+export const createGuide = createAsyncThunk<
+  ApiCreateGuide,
+  GuideFormPayload,
+  { rejectValue: ApiError | string }
+>(CREATE_GUIDE, async (guidePayload, { rejectWithValue }) => {
+  try {
+    const response = await api.post<ApiCreateGuide>(
+      "/api/v1/guides/",
+      guidePayload
+    );
+    return response.data;
+  } catch (error) {
+    // 1. Verificamos si es un error de Axios
+    if (axios.isAxiosError(error)) {
+      // 2. Si NO hay 'error.response', es un error de red
+      if (!error.response) {
+        return rejectWithValue(error.message); // error.message es un string
+      }
+
+      // 3. Si SÍ hay 'error.response', es un error del backend (4xx, 5xx)
+      // Sabemos que 'error.response.data' será de tipo 'ApiError'
+      return rejectWithValue(error.response.data as ApiError);
+    } else {
+      // No es un error de Axios (ej. un error de sintaxis en el 'try')
+      return rejectWithValue("Ocurrió un error inesperado");
+    }
+  }
+});
 
 //Global Initial State
 const initialState: GuidesState = {
@@ -94,6 +134,8 @@ const initialState: GuidesState = {
   ],
   menuDisplay: false,
   modalData: { guideNumber: "", typeModal: "" },
+  status: ASYNC_STATUS.IDLE,
+  error: null,
 };
 
 const guidesSlice = createSlice({
@@ -105,7 +147,7 @@ const guidesSlice = createSlice({
     },
     updateGuide: (state, action: PayloadAction<GuideStage>) => {
       const guide = state.guides.find(
-        (g) => g.guide__number == state.modalData.guideNumber
+        (g) => g.guide__number === state.modalData.guideNumber
       );
       if (guide) {
         guide.guide__stage.push(action.payload);
@@ -118,6 +160,12 @@ const guidesSlice = createSlice({
       state.modalData = action.payload;
     },
   },
+  extraReducers: (builder) => {
+    builder
+    .addCase(createGuide.pending, (state) => {
+      state.status = ASYNC_STATUS.PENDING;
+    })
+  }
 });
 
 //Actions by name
