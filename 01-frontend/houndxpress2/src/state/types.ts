@@ -5,7 +5,7 @@ export interface GuidesState {
   menuDisplay: boolean;
   modalData: InfoModalData;
   status: string;
-  error: ApiError | null,
+  error: ApiError | string | null,
 }
 
 export interface InfoModalData {

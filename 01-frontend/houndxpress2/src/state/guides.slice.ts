@@ -162,10 +162,23 @@ const guidesSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-    .addCase(createGuide.pending, (state) => {
-      state.status = ASYNC_STATUS.PENDING;
-    })
-  }
+      .addCase(createGuide.pending, (state) => {
+        state.status = ASYNC_STATUS.PENDING;
+      })
+      .addCase(createGuide.fulfilled, (state) => {
+        state.status = ASYNC_STATUS.FULFILLED;
+      })
+      .addCase(createGuide.rejected, (state, action) => {
+        state.status = ASYNC_STATUS.REJECTED;
+        // Si usas rejectWithValue, el error viene en .payload
+        if (action.payload) {
+          state.error = action.payload;
+        } else {
+          // Si es un error no manejado, usa .error.message
+          state.error = action.error.message || "Ocurrió un error desconocido";
+        }
+      });
+  },
 });
 
 //Actions by name

@@ -9,17 +9,13 @@ import {
   GuideAnimation,
 } from "./styles";
 import { useCleanErrorOnFocus } from "../../hooks/useCleanErrorOnFocus";
+import { useAppSelector } from "../../hooks/useStoreTypes";
+import { ASYNC_STATUS } from "../../constants/asyncStatus";
 
 const GuideRegister = () => {
-  const { errors, handleValidate, setErrors } = useGuideRegister();
+  const { errors, handleValidate, setErrors, renderServerError } = useGuideRegister();
   const cleanErrorOnFocus = useCleanErrorOnFocus(errors, setErrors);
-
-  //----Funcion para limitar el input de fecha a la fecha actual
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, "0");
-  const day = String(today.getDate()).padStart(2, "0");
-  const formattedDate = `${year}-${month}-${day}`;
+  
 
   return (
     <GuideRegisterContainer className="guide__register" id="guide__register">
@@ -174,6 +170,7 @@ const GuideRegister = () => {
           aria-hidden="true"
         />
       </GuideAnimation>
+      {status === ASYNC_STATUS.REJECTED && renderServerError()}
     </GuideRegisterContainer>
   );
 };

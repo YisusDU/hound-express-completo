@@ -588,3 +588,593 @@ yarn-error.log*
 Ahora sí instalamos axios
 
 > npm install axios
+
+### guides.slices.ts
+
+Se crea el thunk para crear Guías
+
+- \proyect-partner-company-m66\01-frontend\houndxpress2\src\state\guides.slice.ts
+
+```ts
+import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import {
+  ApiCreateGuide,
+  ApiError,
+  GuideFormPayload,
+  GuidesState,
+  InfoModalData,
+} from "./types";
+import { Guide } from "../types/guides";
+import { GuideStage } from "../components/GuideReguister/types";
+import { CREATE_GUIDE } from "../constants/actionTypes";
+import axios from "axios";
+import api from "../api";
+import { ASYNC_STATUS } from "../constants/asyncStatus";
+
+// Peticiones asíncronas
+export const createGuide = createAsyncThunk<
+  ApiCreateGuide,
+  GuideFormPayload,
+  { rejectValue: ApiError | string }
+>(CREATE_GUIDE, async (guidePayload, { rejectWithValue }) => {
+  try {
+    const response = await api.post<ApiCreateGuide>(
+      "/api/v1/guides/",
+      guidePayload
+    );
+    return response.data;
+  } catch (error) {
+    // 1. Verificamos si es un error de Axios
+    if (axios.isAxiosError(error)) {
+      // 2. Si NO hay 'error.response', es un error de red
+      if (!error.response) {
+        return rejectWithValue(error.message); // error.message es un string
+      }
+
+      // 3. Si SÍ hay 'error.response', es un error del backend (4xx, 5xx)
+      // Sabemos que 'error.response.data' será de tipo 'ApiError'
+      return rejectWithValue(error.response.data as ApiError);
+    } else {
+      // No es un error de Axios (ej. un error de sintaxis en el 'try')
+      return rejectWithValue("Ocurrió un error inesperado");
+    }
+  }
+});
+
+//Global Initial State
+const initialState: GuidesState = {
+  guides: [
+    {
+      guide__number: "12345678",
+      guide__origin: "Detroit",
+      guide__destination: "Atlanta",
+      guide__recipient: "Rick",
+      guide__stage: [
+        {
+          guide__date: "2025-05-25",
+          guide__status: "Pendiente",
+          guide__hour: "12:34",
+        },
+      ],
+    },
+    {
+      guide__number: "12345",
+      guide__origin: "Ciudad A",
+      guide__destination: "Ciudad B",
+      guide__recipient: "Persona X",
+      guide__stage: [
+        {
+          guide__date: "2023-10-01",
+          guide__status: "Pendiente",
+          guide__hour: "09:15",
+        },
+        {
+          guide__date: "2023-10-02",
+          guide__status: "En tránsito",
+          guide__hour: "17:42",
+        },
+      ],
+    },
+    {
+      guide__number: "67890",
+      guide__origin: "Ciudad C",
+      guide__destination: "Ciudad D",
+      guide__recipient: "Persona Y",
+      guide__stage: [
+        {
+          guide__date: "2023-10-01",
+          guide__status: "Pendiente",
+          guide__hour: "08:23",
+        },
+        {
+          guide__date: "2023-10-02",
+          guide__status: "En tránsito",
+          guide__hour: "19:08",
+        },
+      ],
+    },
+    {
+      guide__number: "54321",
+      guide__origin: "Ciudad E",
+      guide__destination: "Ciudad F",
+      guide__recipient: "Persona Z",
+      guide__stage: [
+        {
+          guide__date: "2023-09-28",
+          guide__status: "Pendiente",
+          guide__hour: "10:55",
+        },
+        {
+          guide__date: "2023-09-29",
+          guide__status: "En tránsito",
+          guide__hour: "14:27",
+        },
+        {
+          guide__date: "2023-09-30",
+          guide__status: "Entregado",
+          guide__hour: "18:36",
+        },
+      ],
+    },
+    {
+      guide__number: "98765",
+      guide__origin: "Ciudad G",
+      guide__destination: "Ciudad H",
+      guide__recipient: "Persona N",
+      guide__stage: [
+        {
+          guide__date: "2023-10-03",
+          guide__status: "Pendiente",
+          guide__hour: "15:02",
+        },
+      ],
+    },
+  ],
+  menuDisplay: false,
+  modalData: { guideNumber: "", typeModal: "" },
+  status: ASYNC_STATUS.IDLE,
+  error: null,
+};
+
+const guidesSlice = createSlice({
+  name: "guidesState",
+  initialState,
+  reducers: {
+    addGuide: (state, action: PayloadAction<Guide>) => {
+      state.guides.unshift(action.payload);
+    },
+    updateGuide: (state, action: PayloadAction<GuideStage>) => {
+      const guide = state.guides.find(
+        (g) => g.guide__number === state.modalData.guideNumber
+      );
+      if (guide) {
+        guide.guide__stage.push(action.payload);
+      }
+    },
+    toggleMenu: (state, action: PayloadAction<boolean>) => {
+      state.menuDisplay = action.payload;
+    },
+    changeModalData: (state, action: PayloadAction<InfoModalData>) => {
+      state.modalData = action.payload;
+    },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(createGuide.pending, (state) => {
+        state.status = ASYNC_STATUS.PENDING;
+      })
+      .addCase(createGuide.fulfilled, (state) => {
+        state.status = ASYNC_STATUS.FULFILLED;
+      })
+      .addCase(createGuide.rejected, (state, action) => {
+        state.status = ASYNC_STATUS.REJECTED;
+        // Si usas rejectWithValue, el error viene en .payload
+        if (action.payload) {
+          state.error = action.payload;
+        } else {
+          // Si es un error no manejado, usa .error.message
+          state.error = action.error.message || "Ocurrió un error desconocido";
+        }
+      });
+  },
+});
+
+//Actions by name
+export const { addGuide, toggleMenu, changeModalData, updateGuide } =
+  guidesSlice.actions;
+
+//Reducer for the store
+export default guidesSlice.reducer;
+
+```
+
+### types de redux
+
+Se actualizó el archivo de tipos para permitir a redux saber el tipado del thunk
+
+- \proyect-partner-company-m66\01-frontend\houndxpress2\src\state\types.ts
+
+```ts
+import { Guide } from "../types/guides";
+
+export interface GuidesState {
+  guides: Guide[];
+  menuDisplay: boolean;
+  modalData: InfoModalData;
+  status: string;
+  error: ApiError | null,
+}
+
+export interface InfoModalData {
+  guideNumber: string | "";
+  typeModal: "History" | "Update" | "";
+}
+
+// Lo que la API devuelve al crear una guía
+export interface ApiCreateGuide {
+  id: number;
+  guide_number: string;
+  guide_origin: string;
+  guide_destination: string;
+  guide_recipient: string;
+  current_status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Lo que el formulario envía (el payload)
+// Nota: no enviamos 'id' ni 'current_status'
+export type GuideFormPayload = {
+  guide_number: string;
+  guide_origin: string;
+  guide_destination: string;
+  guide_recipient: string;
+};
+
+export interface ApiError {
+  [key: string]: string[] | string;
+}
+
+```
+
+### Custom hook useGuideRegister.ts
+
+Este hook se utiliza para validar el formulario antes de enviarse y llama la el thunk para crear guias, se recortó y ajustó para las nuevas mecánicas
+
+- \proyect-partner-company-m66\01-frontend\houndxpress2\src\hooks\useGuideRegister.ts
+
+```ts
+import React from "react";
+import { useState } from "react";
+import { useAppDispatch, useAppSelector } from "./useStoreTypes";
+import { addGuide, createGuide } from "../state/guides.slice";
+import validateFields from "./useValidateFields";
+import { Guide } from "../types/guides";
+import { ApiError, GuideFormPayload } from "../state/types";
+
+const useGuideRegister = () => {
+  const error = useAppSelector((state) => state.guides.error);
+  const status = useAppSelector((state) => state.guides.status);
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
+  //Redux dispatch:
+  const dispatch = useAppDispatch();
+  const guides = useAppSelector((state) => state.guides.guides);
+
+  const handleValidate = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+
+    //Validate the guide number
+    const guideNumber = (formData.get("guide__number") as string)?.trim();
+
+    const existingGuide = guides.some(
+      (guide: Guide) => guide["guide__number"] === guideNumber
+    );
+    // console.log("existingGuide", existingGuide);
+
+    if (existingGuide) {
+      // console.log("existingGuide", existingGuide);
+      // console.log("The guide number is valid?", isValidNumber)
+      setErrors({ guide__number: "El número de guía ya existe" });
+      return;
+    } else {
+      // console.log("the guide number is valid")
+    }
+
+    //validate all the fields empty
+    const requiredFields = [
+      "guide__number",
+      "guide__origin",
+      "guide__destination",
+      "guide__recipient",
+    ];
+
+    const { isValid } = validateFields(requiredFields, formData, setErrors);
+
+    //Validate if the form is valid to go ahead
+    // console.log("Formulario válido:", validForm ? "true" : "false");
+    if (!isValid) {
+      e.preventDefault();
+      return;
+    }
+
+    //Take the info into an object
+    const guideData: GuideFormPayload = {
+      guide_number: (formData.get("guide__number") as string)?.trim() || "",
+      guide_origin: (formData.get("guide__origin") as string)?.trim() || "",
+      guide_destination:
+        (formData.get("guide__destination") as string)?.trim() || "",
+      guide_recipient:
+        (formData.get("guide__recipient") as string)?.trim() || "",
+    };
+
+    //Redux dispatch:
+    // dispatch(addGuide(guideData));
+
+    try {
+      await dispatch(createGuide(guideData)).unwrap();
+      alert("Guía registrada con éxito");
+      //clean the form
+      form.reset();
+    } catch (rejectedValue) {
+      console.error("Falló al crear la guía:", rejectedValue);
+      alert("There was an error creating your order. Please try again.");
+      if (typeof rejectedValue === "object" && rejectedValue !== null) {
+        // Transforma el ApiError en el estado de errores local
+        const backendErrors: { [key: string]: string } = {};
+        for (const [key, value] of Object.entries(rejectedValue as ApiError)) {
+          // Asumimos que los nombres de campo coinciden (ej. guide_number)
+          // y tomamos solo el primer mensaje de error
+          const newKey = `guide__${key.split("_")[1]}`; // Transforma 'guide_number' a 'guide__number'
+          if (Array.isArray(value)) {
+            backendErrors[newKey] = value[0];
+          }
+        }
+        setErrors(backendErrors);
+      } else {
+        // Es un error de string genérico, no lo podemos poner en un campo
+        // 'renderServerError' lo mostrará de todas formas.
+        console.log("Error de servidor genérico:", rejectedValue);
+      }
+    }
+  };
+
+  // Esta función decide cómo renderizar el error
+  const renderServerError = () => {
+    // Si no hay error, no renderiza nada
+    if (!error) return null;
+
+    // --- CASO 1: El error es un string simple ---
+    // (Ej: "Network Error", "No encontrado", etc.)
+    if (typeof error === "string") {
+      return (
+        <div className="server-error" role="alert">
+          {error}
+        </div>
+      );
+    }
+
+    // --- CASO 2: El error es un objeto ApiError ---
+    // (Ej: { guide_number: ["Este campo..."], ... })
+    // Lo recorremos y mostramos cada error de campo
+    return (
+      <div className="server-error" role="alert">
+        <strong>Por favor, corrige los siguientes errores:</strong>
+        <ul>
+          {Object.entries(error).map(([field, messages]) => (
+            <li key={field}>
+              {/* `messages` puede ser string[] o string (para "detail") */}
+              {Array.isArray(messages) ? (
+                messages.map((msg, idx) => <span key={idx}>{msg}</span>)
+              ) : (
+                <span>{messages}</span>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  };
+
+  return { errors, handleValidate, setErrors, renderServerError };
+};
+
+export { useGuideRegister };
+
+```
+
+### Componente GuideRegister
+
+El componente se actualizó para eliminar los campos innecesarios como de la fecha hora y estado inicial, pues se definen en automático por el backend
+
+- \proyect-partner-company-m66\01-frontend\houndxpress2\src\components\GuideReguister\index.tsx
+
+```ts
+import React from "react";
+import Paws from "../../assets/IMG/paw-solid.svg";
+import { useGuideRegister } from "../../hooks/useGuideRegister";
+import {
+  GuideRegisterContainer,
+  GuideContainer,
+  GuideForm,
+  GuideSubmit,
+  GuideAnimation,
+} from "./styles";
+import { useCleanErrorOnFocus } from "../../hooks/useCleanErrorOnFocus";
+import { useAppSelector } from "../../hooks/useStoreTypes";
+import { ASYNC_STATUS } from "../../constants/asyncStatus";
+
+const GuideRegister = () => {
+  const { errors, handleValidate, setErrors, renderServerError } = useGuideRegister();
+  const cleanErrorOnFocus = useCleanErrorOnFocus(errors, setErrors);
+  
+
+  return (
+    <GuideRegisterContainer className="guide__register" id="guide__register">
+      {/* <!--Formulario--> */}
+      <GuideContainer className="guide__container">
+        <h2 className="guide__title">Registro de guías</h2>
+        <GuideForm
+          className="guide__form"
+          action="#"
+          onSubmit={handleValidate}
+          role="form"
+        >
+          <label className="guide__form--label" htmlFor="guide__number">
+            Número de guía:
+          </label>
+          <input
+            className="guide__form--input"
+            id="guide__number"
+            name="guide__number"
+            type="text"
+            inputMode="numeric"
+            pattern="\d{1,8}"
+            maxLength={8}
+            placeholder="Número de guía:"
+            aria-label="Añade un número de guía de máximo 8 caracteres"
+            title="Añade un número de guía de máximo 8 caracteres"
+            onFocus={cleanErrorOnFocus}
+            aria-required="true"
+            aria-invalid={errors.guide__number ? "true" : "false"}
+            aria-describedby={
+              errors.guide__number ? errors.guide__number : undefined
+            }
+          />
+          <span className="error-message" role="alert" aria-live="polite">
+            {errors.guide__number}
+          </span>
+
+          <label className="guide__form--label" htmlFor="guide__origin">
+            Origen del envío:
+          </label>
+          <input
+            className="guide__form--input"
+            id="guide__origin"
+            name="guide__origin"
+            type="text"
+            inputMode="text"
+            maxLength={30}
+            placeholder="Origen del envío:"
+            aria-label="Origen del envío:"
+            title="Añade la ciudad de origen"
+            onFocus={cleanErrorOnFocus}
+            aria-required="true"
+            aria-invalid={errors.guide__origin ? "true" : "false"}
+            aria-describedby={
+              errors.guide__origin ? errors.guide__origin : undefined
+            }
+          />
+          <span className="error-message" role="alert" aria-live="polite">
+            {errors.guide__origin}
+          </span>
+
+          <label className="guide__form--label" htmlFor="guide__destination">
+            Destino del envío:
+          </label>
+          <input
+            className="guide__form--input"
+            id="guide__destination"
+            name="guide__destination"
+            type="text"
+            inputMode="text"
+            maxLength={30}
+            placeholder="Destino del envío:"
+            aria-label="Añade el destino del envío:"
+            title="Añade la ciudad de destino"
+            onFocus={cleanErrorOnFocus}
+            aria-required="true"
+            aria-invalid={errors.guide__destination ? "true" : "false"}
+            aria-describedby={
+              errors.guide__destination ? errors.guide__destination : undefined
+            }
+          />
+          <span className="error-message" role="alert" aria-live="polite">
+            {errors.guide__destination}
+          </span>
+
+          <label className="guide__form--label" htmlFor="guide__recipient">
+            Destinatario:
+          </label>
+          <input
+            className="guide__form--input"
+            id="guide__recipient"
+            name="guide__recipient"
+            type="text"
+            inputMode="text"
+            maxLength={30}
+            placeholder="Destinatario:"
+            aria-label="Añade el nombre y apellido del destinatario"
+            title="Añade el nombre y apellido del destinatario"
+            onFocus={cleanErrorOnFocus}
+            aria-required="true"
+            aria-invalid={errors.guide__recipient ? "true" : "false"}
+            aria-describedby={
+              errors.guide__recipient ? errors.guide__recipient : undefined
+            }
+          />
+          <span className="error-message" role="alert" aria-live="polite">
+            {errors.guide__recipient}
+          </span>
+          <br />
+          <GuideSubmit
+            className="guide__form--submit"
+            type="submit"
+            role="button"
+            aria-label="Enviar formulario"
+            title="Enviar formulario"
+          >
+            Enviar
+          </GuideSubmit>
+        </GuideForm>
+      </GuideContainer>
+
+      {/* <!--Animacion--> */}
+      <GuideAnimation className="guide__animation">
+        <img
+          className="guide__svg guide__svg--left"
+          src={Paws}
+          alt="Huella de perro"
+          aria-hidden="true"
+        />
+        <img
+          className="guide__svg guide__svg--right"
+          src={Paws}
+          alt="Huella de perro"
+          aria-hidden="true"
+        />
+        <img
+          className="guide__svg guide__svg--left"
+          src={Paws}
+          alt="Huella de perro"
+          aria-hidden="true"
+        />
+        <img
+          className="guide__svg guide__svg--right"
+          src={Paws}
+          alt="Huella de perro"
+          aria-hidden="true"
+        />
+        <img
+          className="guide__svg guide__svg--left"
+          src={Paws}
+          alt="Huella de perro"
+          aria-hidden="true"
+        />
+      </GuideAnimation>
+      {status === ASYNC_STATUS.REJECTED && renderServerError()}
+    </GuideRegisterContainer>
+  );
+};
+
+export default GuideRegister;
+
+```
+
+### Tests de App
+
+Dado que modificamos el estado inicial del Slice, me fallaron las pruebas de la app y no me dejó reenderizar hasta corregirlo, por lo que añadí los campos que faltaban
+
+- \proyect-partner-company-m66\01-frontend\houndxpress2\src\App\__test__\App.test.tsxconst defaultState: GuidesState = {
