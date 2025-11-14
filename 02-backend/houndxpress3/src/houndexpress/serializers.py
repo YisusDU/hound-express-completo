@@ -10,27 +10,30 @@ class GuideSerializer(ModelSerializer):
         model = Guia
         fields = [
             "id",
-            "trackingNumber",
-            "origin",
-            "destination",
-            "currentStatus"
+            "guide_number",
+            "guide_origin",
+            "guide_destination",
+            "guide_recipient",
+            "current_status",
+            "created_at",
+            "updated_at"
         ]
         extra_kwargs = {
-            'trackingNumber': {'label': 'Número de Seguimiento'},
-            'origin': {'label': 'Origen'},
-            'destination': {'label': 'Destino'},
-            'currentStatus': {'label': 'Estado Actual'},
+            'guide_number': {'label': 'Número de Seguimiento'},
+            'guide_origin': {'label': 'Origen'},
+            'guide_destination': {'label': 'Destino'},
+            'current_status': {'label': 'Estado Actual'},
         }
-        read_only_fields = ['id', "currentStatus"]
+        read_only_fields = ['id', "current_status"]
 
     def validate(self, data):
         """Validación de múltiples campos"""
         if self.instance:
             # En UPDATE (PUT/PATCH)
-            origin = data.get('origin', self.instance.origin)
-            destination = data.get('destination', self.instance.destination)
-        origin = data.get('origin')
-        destination = data.get('destination')
+            origin = data.get('guide_origin', self.instance.guide_origin)
+            destination = data.get('guide_destination', self.instance.guide_destination)
+        origin = data.get('guide_origin')
+        destination = data.get('guide_destination')
 
         # Validar solo si ambos tienen valor
         if origin and destination and origin == destination:
@@ -146,10 +149,9 @@ class UserSerializer(ModelSerializer):
         return instance
    
 class EstatusSerializer(ModelSerializer):
-    guide_detail = GuideSerializer(source='guide', read_only=True)
-    updated_by_detail = UserSerializer(source='updatedBy', read_only=True)
+    guide_detail = GuideSerializer(source='guide_data', read_only=True)
     
-    guide = serializers.PrimaryKeyRelatedField(
+    guide_data = serializers.PrimaryKeyRelatedField(
         queryset=Guia.objects.all(),
         write_only=True,
         label = "Número de rastreo",
@@ -164,15 +166,14 @@ class EstatusSerializer(ModelSerializer):
         model = Estatus
         fields = [
             'id',
-            'guide',
+            'guide_data',
             'guide_detail',
-            'status',
+            'guide_status',
             'timestamp',
-            'updated_by_detail'
         ]
         read_only_fields = ['timestamp', 'id']
         extra_kwargs = {
-            'status': {'label': 'Estado'},
+            'guide_status': {'label': 'Estado'},
         }
     
     def validate_status(self, value):
@@ -195,12 +196,12 @@ class EstatusSerializer(ModelSerializer):
         """Validación del campo guide"""
         # Solo validar en CREATE (no en UPDATE)
         if not self.instance:
-            if value.currentStatus == 'Cancelado':
+            if value.current_status == 'Cancelado':
                 raise ValidationError(
                     "No se puede crear estatus para una guía cancelada"
                 )
             
-            if value.currentStatus == 'Entregado':
+            if value.current_status == 'Entregado':
                 raise ValidationError(
                     "No se puede crear estatus para una guía ya entregada"
                 )
@@ -209,8 +210,8 @@ class EstatusSerializer(ModelSerializer):
     
     def validate(self, attrs):
         """Validar que no exista un Estatus duplicado para la misma guía"""
-        guide = attrs.get('guide')
-        new_status = attrs.get('status')
+        guide = attrs.get('guide_data')
+        new_status = attrs.get('guide_status')
         
         # En CREATE: validar que no exista ya un estatus con el mismo status para esta guía
         if not self.instance and guide and new_status:
@@ -221,7 +222,7 @@ class EstatusSerializer(ModelSerializer):
             
             if existe_duplicado:
                 raise ValidationError({
-                    'status': f'Ya existe un registro de estatus "{new_status}" para la guía {guide.trackingNumber}'
+                    'status': f'Ya existe un registro de estatus "{new_status}" para la guía {guide.guide_number}'
                 })
         
         # En UPDATE: validar que no se duplique con otro registro (excepto el mismo)
@@ -233,7 +234,7 @@ class EstatusSerializer(ModelSerializer):
             
             if existe_duplicado:
                 raise ValidationError({
-                    'status': f'Ya existe otro registro de estatus "{new_status}" para la guía {guide.trackingNumber}'
+                    'status': f'Ya existe otro registro de estatus "{new_status}" para la guía {guide.guide_number}'
                 })
         
         return attrs
@@ -244,8 +245,8 @@ class EstatusSerializer(ModelSerializer):
         estatus = Estatus.objects.create(**validated_data)
         
         # Actualizar el currentStatus de la guía
-        guia = estatus.guide
-        guia.currentStatus = estatus.status
+        guia = estatus.guide_data
+        guia.current_status = estatus.guide_status
         guia.save()
         
         return estatus
@@ -259,8 +260,8 @@ class EstatusSerializer(ModelSerializer):
         
         # Si cambió el status, actualizar la guía
         if 'status' in validated_data:
-            guia = instance.guide
-            guia.currentStatus = instance.status
+            guia = instance.guide_data
+            guia.current_status = instance.guide_status
             guia.save()
         
         return instance

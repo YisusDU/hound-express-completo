@@ -32,7 +32,7 @@ class GuideViewSet(ViewSet):
             data = serializer.errors
             return Response({"data": data}, status=status.HTTP_400_BAD_REQUEST)
         
-        serializer.save(currentStatus="Creado")
+        serializer.save(currentStatus="Pendiente")
         message = "Creando una guia"
         data = serializer.data
         return Response({"message": message, "data": data}, status=status.HTTP_201_CREATED)
@@ -222,8 +222,8 @@ class EstatusViewSet(ViewSet):
     @action(detail=False, methods=['get'], url_path='by-tracking/(?P<tracking>[^/.]+)')
     def by_tracking(self, request, tracking=None):
         """Endpoint dedicado para buscar por tracking"""
-        queryset = Estatus.objects.select_related('guide', 'updatedBy').filter(
-            guide__trackingNumber__iexact=tracking
+        queryset = Estatus.objects.select_related('guide_data').filter(
+            guide_data__guide_number__iexact=tracking
         ).order_by('-timestamp')
         
         if not queryset.exists():

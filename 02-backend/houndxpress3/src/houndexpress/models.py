@@ -6,28 +6,23 @@ from django.contrib.auth.models import User
 
 # Create your models here.
 class Guia(models.Model):
-    trackingNumber  = models.CharField(max_length=15, unique=True)
-    origin = models.CharField(max_length=100)
-    destination = models.CharField(max_length=100)
-    createdAt = models.DateTimeField(default=timezone.now)
-    updatedAt = models.DateTimeField(auto_now=True)
-    currentStatus = models.CharField(max_length=20)
+    guide_number  = models.CharField(max_length=15, unique=True)
+    guide_origin = models.CharField(max_length=100)
+    guide_destination = models.CharField(max_length=100)
+    guide_recipient = models.CharField(max_length=100)
+    current_status = models.CharField(max_length=20)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.trackingNumber} - {self.currentStatus}"
+        return f"{self.guide_number} - {self.current_status}"
 
 # Simplificamos el modelo Usuario al importar el que Django ya tiene construido
 
 class Estatus(models.Model):
-    guide = models.ForeignKey(Guia, on_delete=models.CASCADE, related_name='status_history')
-    status = models.CharField(max_length=20)
+    guide_data = models.ForeignKey(Guia, on_delete=models.CASCADE, related_name='status_history')
+    guide_status = models.CharField(max_length=20)
     timestamp = models.DateTimeField(auto_now_add=True)
-    updatedBy = models.ForeignKey(
-        User, 
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='status_updates'
-    )
     
     class Meta:
         ordering = ['-timestamp']
@@ -36,10 +31,10 @@ class Estatus(models.Model):
         #Constraint que evita duplicados de estatus para la misma guia
         constraints = [
             models.UniqueConstraint(
-                fields=['guide', 'status'],
+                fields=['guide_data', 'guide_status'],
                 name='unique_guide_status'
             )
         ]
     
     def __str__(self):
-        return f"{self.guide.trackingNumber} - {self.status}"
+        return f"{self.guide_data.guide_number} - {self.guide_status}"
