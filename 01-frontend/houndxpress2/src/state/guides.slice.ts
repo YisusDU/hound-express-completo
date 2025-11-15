@@ -2,13 +2,19 @@ import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import {
   ApiError,
   ApiGuidePayload,
+  ApiStagesPayload,
   GuideFormPayload,
   GuidesState,
   InfoModalData,
+  StagePayload,
 } from "./types";
 import { Guide } from "../types/guides";
 import { GuideStage } from "../components/GuideReguister/types";
-import { CREATE_GUIDE, FETCH_GUIDES } from "../constants/actionTypes";
+import {
+  CREATE_GUIDE,
+  FETCH_GUIDES,
+  FETCH_STAGES,
+} from "../constants/actionTypes";
 import axios from "axios";
 import api from "../api";
 import { ASYNC_STATUS } from "../constants/asyncStatus";
@@ -66,11 +72,35 @@ export const fetchGuides = createAsyncThunk<
   }
 });
 
+// Listar estados de una guía
+export const fetchStages = createAsyncThunk<
+  ApiStagesPayload[],
+  StagePayload,
+  { rejectValue: ApiError | string }
+>(FETCH_STAGES, async (guideNumber, { rejectWithValue }) => {
+  try {
+    const response = await api.get<ApiStagesPayload[]>(
+      `/api/v1/estatus/by-tracking/${guideNumber}/`
+    );
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      if (!error.response) {
+        return rejectWithValue(error.message);
+      }
+      return rejectWithValue(error.response.data as ApiError);
+    } else {
+      return rejectWithValue("Ocurrió un error inesperado");
+    }
+  }
+});
+
 //Global Initial State
 const initialState: GuidesState = {
   guides: [],
   menuDisplay: false,
   modalData: { guideNumber: "", typeModal: "" },
+  stages: [],
   status: ASYNC_STATUS.IDLE,
   error: null,
 };
@@ -125,6 +155,22 @@ const guidesSlice = createSlice({
         state.guides = action.payload;
       })
       .addCase(fetchGuides.rejected, (state, action) => {
+        state.status = ASYNC_STATUS.REJECTED;
+        if (action.payload) {
+          state.error = action.payload;
+        } else {
+          state.error = action.error.message || "Ocurrió un error desconocido";
+        }
+      })
+      // Listar estados
+      .addCase(fetchStages.pending, (state) => {
+        state.status = ASYNC_STATUS.PENDING;
+      })
+      .addCase(fetchStages.fulfilled, (state, action) => {
+        state.status = ASYNC_STATUS.FULFILLED;
+        state.stages = action.payload;
+      })
+      .addCase(fetchStages.rejected, (state, action) => {
         state.status = ASYNC_STATUS.REJECTED;
         if (action.payload) {
           state.error = action.payload;

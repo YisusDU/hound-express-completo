@@ -4,8 +4,9 @@ export interface GuidesState {
   guides: ApiGuidePayload[];
   menuDisplay: boolean;
   modalData: InfoModalData;
+  stages: ApiStagesPayload[];
   status: string;
-  error: ApiError | string | null,
+  error: ApiError | string | null;
 }
 
 export interface InfoModalData {
@@ -37,3 +38,14 @@ export type GuideFormPayload = {
 export interface ApiError {
   [key: string]: string[] | string;
 }
+
+// Lo que devuelve la API al listar estados
+export interface ApiStagesPayload {
+  id: number;
+  guide_detail: ApiGuidePayload;
+  guide_status: string;
+  timestamp: string;
+}
+
+// Lo que le pasamos a a la api para listar estados
+export type StagePayload = string;

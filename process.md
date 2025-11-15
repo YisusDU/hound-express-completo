@@ -2076,3 +2076,36 @@ const GeneralState = () => {
 export default GeneralState;
 
 ```
+
+### Modal History
+
+Para refactorizar este modal, crearé un nuevo thunk que haga peticiones get para listar estados de la guía filtrando por número de guía
+
+#### actionTypes
+
+Creamos un action types para las etapas
+
+- \proyect-partner-company-m66\01-frontend\houndxpress2\src\constants\actionTypes.ts
+
+```ts
+// También se puede hacer con objetos, es tan solo una variante
+export const CREATE_GUIDE = "guide/createGuide";
+export const FETCH_GUIDES = "guide/fetchGuides";
+export const FETCH_STAGES = "guide/fetchStages"; // <-- Stages
+
+```
+
+Creamos el tipado para esta petición
+
+- \proyect-partner-company-m66\01-frontend\houndxpress2\src\state\types.ts
+
+```ts
+// Lo que devuelve la API al listar estados
+export interface ApiStagesPaylod {
+  id: number;
+  guide_detail: ApiGuidePayload;
+  guide_status: string;
+  timestamp: string;
+}
+
+```
