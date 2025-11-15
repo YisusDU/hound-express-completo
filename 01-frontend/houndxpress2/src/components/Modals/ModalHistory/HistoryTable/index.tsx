@@ -9,9 +9,9 @@ const HistoryTable = () => {
   const guideNumber = useAppSelector(
     (state) => state.guides.modalData.guideNumber
   );
-  const currentGuide = guides.find((g) => g.guide__number === guideNumber);
+  const currentGuide = guides.find((g) => g.guide_number === guideNumber);
   //Verify if the current guide has stages, if not, it will be an empty array
-  const stages = currentGuide?.guide__stage ?? [];
+  const stages = useAppSelector((state) => state.guides.stages);
   //Function to dragg the table on scroll, it needs styles of overflow
   const tableRef = useDraggTable();
 
@@ -30,11 +30,13 @@ const HistoryTable = () => {
         <tbody className="tableHistory__currentGuide--body">
           {currentGuide ? (
             <tr>
-              <td data-label="Número de guía">{currentGuide.guide__number}</td>
-              <td data-label="Estado">{stages[stages.length - 1]?.guide__status}</td>
-              <td data-label="Origen">{currentGuide.guide__origin}</td>
-              <td data-label="Destino">{currentGuide.guide__destination}</td>
-              <td data-label="Destinatario">{currentGuide.guide__recipient}</td>
+              <td data-label="Número de guía">{currentGuide.guide_number}</td>
+              <td data-label="Estado">
+                {currentGuide.current_status}
+              </td>
+              <td data-label="Origen">{currentGuide.guide_origin}</td>
+              <td data-label="Destino">{currentGuide.guide_destination}</td>
+              <td data-label="Destinatario">{currentGuide.guide_recipient}</td>
             </tr>
           ) : (
             <tr>
