@@ -24,14 +24,13 @@ const HistoryPath = () => {
   const guideNumber = useAppSelector(
     (state) => state.guides.modalData.guideNumber
   );
-  const currentGuide = guides.find((g) => g.guide_number === guideNumber);
 
   // Disparamos la operación asíncrona para listar guías
   useEffect(() => {
     if (guideNumber) {
       dispatch(fetchStages(guideNumber));
     }
-  }, [dispatch, status]);
+  }, [dispatch, guideNumber]);
 
   return (
     <section>
@@ -39,40 +38,54 @@ const HistoryPath = () => {
       {status == ASYNC_STATUS.FULFILLED &&
         (stages && stages.length >= 1 ? (
           <>
-            {stages.map((stage, idx) => (
-              <ModalHistoryPath key={idx}>
-                <ModalSVGContainer>
-                  <img src={Paw} alt="paw-icon" />
-                </ModalSVGContainer>
-                <ModalPathContent>
-                  <h3
-                    className={
-                      stage.guide_status === "Pendiente"
-                        ? "status--pending"
-                        : stage.guide_status === "En tránsito"
-                        ? "status--transit"
-                        : stage.guide_status === "Entregado"
-                        ? "status--delivered"
-                        : ""
-                    }
-                  >
-                    {stage.guide_status}
-                  </h3>
-                  <div>
-                    <span>{`${stage.timestamp} | `}</span>
-                    <span>
-                      {stage.guide_status === "Pendiente" &&
-                        "Tu envío está en preparación"}
-                      {stage.guide_status === "En tránsito" &&
-                        "Tu envío está en camino"}
-                      {stage.guide_status === "Entregado" &&
-                        "¡Tu envío fue entregado!"}
-                    </span>
-                  </div>
-                  <hr />
-                </ModalPathContent>
-              </ModalHistoryPath>
-            ))}
+            {stages.map((stage, idx) => {
+              const dateObj = new Date(stage.timestamp);
+              // 'es-MX' usa el formato DD/MM/YYYY
+              const fecha = dateObj.toLocaleDateString("es-MX", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+              });
+              const hora = dateObj.toLocaleTimeString("en-US", {
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: true,
+              });
+              return (
+                <ModalHistoryPath key={idx}>
+                  <ModalSVGContainer>
+                    <img src={Paw} alt="paw-icon" />
+                  </ModalSVGContainer>
+                  <ModalPathContent>
+                    <h3
+                      className={
+                        stage.guide_status === "Pendiente"
+                          ? "status--pending"
+                          : stage.guide_status === "En tránsito"
+                          ? "status--transit"
+                          : stage.guide_status === "Entregado"
+                          ? "status--delivered"
+                          : ""
+                      }
+                    >
+                      {stage.guide_status}
+                    </h3>
+                    <div>
+                      <span>{`${fecha} ${hora} | `}</span>
+                      <span>
+                        {stage.guide_status === "Pendiente" &&
+                          "Tu envío está en preparación"}
+                        {stage.guide_status === "En tránsito" &&
+                          "Tu envío está en camino"}
+                        {stage.guide_status === "Entregado" &&
+                          "¡Tu envío fue entregado!"}
+                      </span>
+                    </div>
+                    <hr />
+                  </ModalPathContent>
+                </ModalHistoryPath>
+              );
+            })}
           </>
         ) : (
           <p>No hay valores para mostrar</p>

@@ -212,7 +212,7 @@ class UserSerializer(ModelSerializer):
                 raise ValidationError({
                     'password': 'Se requieren ambas contraseñas'
                 })
-      
+    
             # Validar que coincidan
             if password != password2:
                 raise ValidationError({
@@ -314,7 +314,7 @@ class EstatusSerializer(ModelSerializer):
                 raise ValidationError(
                     "No se puede crear estatus para una guía cancelada"
                 )
-      
+    
             if value.current_status == 'Entregado':
                 raise ValidationError(
                     "No se puede crear estatus para una guía ya entregada"
@@ -333,7 +333,7 @@ class EstatusSerializer(ModelSerializer):
                 guide=guide,
                 status=new_status
             ).exists()
-      
+    
             if existe_duplicado:
                 raise ValidationError({
                     'status': f'Ya existe un registro de estatus "{new_status}" para la guía {guide.guide_number}'
@@ -345,7 +345,7 @@ class EstatusSerializer(ModelSerializer):
                 guide=guide,
                 status=new_status
             ).exclude(id=self.instance.id).exists()
-      
+    
             if existe_duplicado:
                 raise ValidationError({
                     'status': f'Ya existe otro registro de estatus "{new_status}" para la guía {guide.guide_number}'
@@ -2101,11 +2101,321 @@ Creamos el tipado para esta petición
 
 ```ts
 // Lo que devuelve la API al listar estados
-export interface ApiStagesPaylod {
+export interface ApiStagesPayload {
   id: number;
   guide_detail: ApiGuidePayload;
   guide_status: string;
   timestamp: string;
 }
+
+// Lo que le pasamos a a la api para listar estados
+export type StagePayload = string;
+```
+
+Creamos el thunk junto con sus extrareducers
+
+- \proyect-partner-company-m66\01-frontend\houndxpress2\src\state\guides.slice.ts
+
+```ts
+import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import {
+  ApiError,
+  ApiGuidePayload,
+  ApiStagesPayload,
+  GuideFormPayload,
+  GuidesState,
+  InfoModalData,
+  StagePayload,
+} from "./types";
+import { Guide } from "../types/guides";
+import { GuideStage } from "../components/GuideReguister/types";
+import {
+  CREATE_GUIDE,
+  FETCH_GUIDES,
+  FETCH_STAGES,
+} from "../constants/actionTypes";
+import axios from "axios";
+import api from "../api";
+import { ASYNC_STATUS } from "../constants/asyncStatus";
+
+// Peticiones asíncronas
+
+// Crear guías
+export const createGuide = createAsyncThunk<
+  ApiGuidePayload,
+  GuideFormPayload,
+  { rejectValue: ApiError | string }
+>(CREATE_GUIDE, async (guidePayload, { rejectWithValue }) => {
+  try {
+    const response = await api.post<ApiGuidePayload>(
+      "/api/v1/guides/",
+      guidePayload
+    );
+    return response.data;
+  } catch (error) {
+    // 1. Verificamos si es un error de Axios
+    if (axios.isAxiosError(error)) {
+      // 2. Si NO hay 'error.response', es un error de red
+      if (!error.response) {
+        return rejectWithValue(error.message); // error.message es un string
+      }
+
+      // 3. Si SÍ hay 'error.response', es un error del backend (4xx, 5xx)
+      // Sabemos que 'error.response.data' será de tipo 'ApiError'
+      return rejectWithValue(error.response.data as ApiError);
+    } else {
+      // No es un error de Axios (ej. un error de sintaxis en el 'try')
+      return rejectWithValue("Ocurrió un error inesperado");
+    }
+  }
+});
+
+// Listar guías
+export const fetchGuides = createAsyncThunk<
+  ApiGuidePayload[],
+  void,
+  { rejectValue: ApiError | string }
+>(FETCH_GUIDES, async (_, { rejectWithValue }) => {
+  try {
+    const response = await api.get<ApiGuidePayload[]>("/api/v1/guides/");
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      if (!error.response) {
+        return rejectWithValue(error.message);
+      }
+      return rejectWithValue(error.response.data as ApiError);
+    } else {
+      return rejectWithValue("Ocurrió un error inesperado");
+    }
+  }
+});
+
+// Listar estados de una guía
+export const fetchStages = createAsyncThunk<
+  ApiStagesPayload[],
+  StagePayload,
+  { rejectValue: ApiError | string }
+>(FETCH_STAGES, async (guideNumber, { rejectWithValue }) => {
+  try {
+    const response = await api.get<ApiStagesPayload[]>(
+      `/api/v1/estatus/by-tracking/${guideNumber}/`
+    );
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      if (!error.response) {
+        return rejectWithValue(error.message);
+      }
+      return rejectWithValue(error.response.data as ApiError);
+    } else {
+      return rejectWithValue("Ocurrió un error inesperado");
+    }
+  }
+});
+
+//Global Initial State
+const initialState: GuidesState = {
+  guides: [],
+  menuDisplay: false,
+  modalData: { guideNumber: "", typeModal: "" },
+  stages: [],
+  status: ASYNC_STATUS.IDLE,
+  error: null,
+};
+
+const guidesSlice = createSlice({
+  name: "guidesState",
+  initialState,
+  reducers: {
+    // addGuide: (state, action: PayloadAction<Guide>) => {
+    //   state.guides.unshift(action.payload);
+    // },
+    // updateGuide: (state, action: PayloadAction<GuideStage>) => {
+    //   const guide = state.guides.find(
+    //     (g) => g.guide_number === state.modalData.guideNumber
+    //   );
+    //   if (guide) {
+    //     guide.guide_stage.push(action.payload);
+    //   }
+    // },
+    toggleMenu: (state, action: PayloadAction<boolean>) => {
+      state.menuDisplay = action.payload;
+    },
+    changeModalData: (state, action: PayloadAction<InfoModalData>) => {
+      state.modalData = action.payload;
+    },
+  },
+  extraReducers: (builder) => {
+    builder
+      // Crear guías
+      .addCase(createGuide.pending, (state) => {
+        state.status = ASYNC_STATUS.PENDING;
+      })
+      .addCase(createGuide.fulfilled, (state) => {
+        state.status = ASYNC_STATUS.FULFILLED;
+      })
+      .addCase(createGuide.rejected, (state, action) => {
+        state.status = ASYNC_STATUS.REJECTED;
+        // Si usas rejectWithValue, el error viene en .payload
+        if (action.payload) {
+          state.error = action.payload;
+        } else {
+          // Si es un error no manejado, usa .error.message
+          state.error = action.error.message || "Ocurrió un error desconocido";
+        }
+      })
+      // Listar guías
+      .addCase(fetchGuides.pending, (state) => {
+        state.status = ASYNC_STATUS.PENDING;
+      })
+      .addCase(fetchGuides.fulfilled, (state, action) => {
+        state.status = ASYNC_STATUS.FULFILLED;
+        state.guides = action.payload;
+      })
+      .addCase(fetchGuides.rejected, (state, action) => {
+        state.status = ASYNC_STATUS.REJECTED;
+        if (action.payload) {
+          state.error = action.payload;
+        } else {
+          state.error = action.error.message || "Ocurrió un error desconocido";
+        }
+      })
+      // Listar estados
+      .addCase(fetchStages.pending, (state) => {
+        state.status = ASYNC_STATUS.PENDING;
+      })
+      .addCase(fetchStages.fulfilled, (state, action) => {
+        state.status = ASYNC_STATUS.FULFILLED;
+        state.stages = action.payload;
+      })
+      .addCase(fetchStages.rejected, (state, action) => {
+        state.status = ASYNC_STATUS.REJECTED;
+        if (action.payload) {
+          state.error = action.payload;
+        } else {
+          state.error = action.error.message || "Ocurrió un error desconocido";
+        }
+      });
+  },
+});
+
+//Actions by name
+export const { /* addGuide, */ toggleMenu, changeModalData /* updateGuide */ } =
+  guidesSlice.actions;
+
+//Reducer for the store
+export default guidesSlice.reducer;
+
+```
+
+Y finalmente el componente, 
+
+- \proyect-partner-company-m66\01-frontend\houndxpress2\src\components\Modals\ModalHistory\HistoryPath\index.tsx
+
+```ts
+import React, { useEffect } from "react";
+import Paw from "../../../../assets/IMG/paw-solid.svg";
+import {
+  ModalHistoryPath,
+  ModalPathContent,
+  ModalSVGContainer,
+} from "./styles";
+import {
+  useAppDispatch,
+  useAppSelector,
+} from "../../../../hooks/useStoreTypes";
+import { ASYNC_STATUS } from "../../../../constants/asyncStatus";
+import ServerError from "../../../ServerError";
+import { fetchStages } from "../../../../state/guides.slice";
+
+const HistoryPath = () => {
+  //Redux state
+  const dispatch = useAppDispatch();
+
+  const guides = useAppSelector((state) => state.guides.guides);
+  const status = useAppSelector((state) => state.guides.status);
+  const stages = useAppSelector((state) => state.guides.stages);
+  const error = useAppSelector((state) => state.guides.error);
+  const guideNumber = useAppSelector(
+    (state) => state.guides.modalData.guideNumber
+  );
+
+  // Disparamos la operación asíncrona para listar guías
+  useEffect(() => {
+    if (guideNumber) {
+      dispatch(fetchStages(guideNumber));
+    }
+  }, [dispatch, guideNumber]);
+
+  return (
+    <section>
+      {/* Dinamics paths of following  */}
+      {status == ASYNC_STATUS.FULFILLED &&
+        (stages && stages.length >= 1 ? (
+          <>
+            {stages.map((stage, idx) => {
+              const dateObj = new Date(stage.timestamp);
+              // 'es-MX' usa el formato DD/MM/YYYY
+              const fecha = dateObj.toLocaleDateString("es-MX", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+              });
+              const hora = dateObj.toLocaleTimeString("en-US", {
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: true,
+              });
+              return (
+                <ModalHistoryPath key={idx}>
+                  <ModalSVGContainer>
+                    <img src={Paw} alt="paw-icon" />
+                  </ModalSVGContainer>
+                  <ModalPathContent>
+                    <h3
+                      className={
+                        stage.guide_status === "Pendiente"
+                          ? "status--pending"
+                          : stage.guide_status === "En tránsito"
+                          ? "status--transit"
+                          : stage.guide_status === "Entregado"
+                          ? "status--delivered"
+                          : ""
+                      }
+                    >
+                      {stage.guide_status}
+                    </h3>
+                    <div>
+                      <span>{`${fecha} ${hora} | `}</span>
+                      <span>
+                        {stage.guide_status === "Pendiente" &&
+                          "Tu envío está en preparación"}
+                        {stage.guide_status === "En tránsito" &&
+                          "Tu envío está en camino"}
+                        {stage.guide_status === "Entregado" &&
+                          "¡Tu envío fue entregado!"}
+                      </span>
+                    </div>
+                    <hr />
+                  </ModalPathContent>
+                </ModalHistoryPath>
+              );
+            })}
+          </>
+        ) : (
+          <p>No hay valores para mostrar</p>
+        ))}
+      {status === ASYNC_STATUS.PENDING && (
+        <div>
+          <h2>Loading... 🥱</h2>
+        </div>
+      )}
+      {status === ASYNC_STATUS.REJECTED && <ServerError error={error} />}
+    </section>
+  );
+};
+
+export default HistoryPath;
 
 ```
