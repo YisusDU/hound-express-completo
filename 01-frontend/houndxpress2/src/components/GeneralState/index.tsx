@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import Gift from "../../assets/IMG/Animacion-beneficios-sistema-v2.gif";
-import { Guide } from "../../types/guides";
 import {
   GeneralStateContainer,
   StateContainer,
@@ -22,20 +21,12 @@ const GeneralState = () => {
 
   //AutoUpdate the general numbers
   useEffect(() => {
-    const active = guides.filter(
-      (e) => !e.guide__stage.some((e) => e.guide__status === "Entregado")
-    ).length;
-    const delivered = guides.filter((e) =>
-      e.guide__stage.some((e) => e.guide__status === "Entregado")
+    const active = guides.filter((e) => e.current_status != "Entregado").length;
+    const delivered = guides.filter(
+      (e) => e.current_status === "Entregado"
     ).length;
     const pending = guides.filter(
-      (guide) =>
-        guide.guide__stage.some(
-          (stage) => stage.guide__status === "Pendiente"
-        ) &&
-        !guide.guide__stage.some(
-          (stage) => stage.guide__status === "En tránsito"
-        )
+      (guide) => guide.current_status === "Pendiente"
     ).length;
     const transit = guides.length - delivered - pending;
 
@@ -60,20 +51,39 @@ const GeneralState = () => {
         <StateElement className="state__element">
           <StateGroup className="state__group">
             <h2 className="state__subject">Número total de guías activas</h2>
-            <p data-testid="totalGuidesActive" className="state__info totalGuidesActive">{guideActive}</p>
+            <p
+              data-testid="totalGuidesActive"
+              className="state__info totalGuidesActive"
+            >
+              {guideActive}
+            </p>
           </StateGroup>
           <StateGroup className="state__group">
             <h2 className="state__subject">Guías en tránsito</h2>
-            <p data-testid="onTransitGuides" className="state__info onTransitGuides">{guideTransit}</p>
+            <p
+              data-testid="onTransitGuides"
+              className="state__info onTransitGuides"
+            >
+              {guideTransit}
+            </p>
           </StateGroup>
           <StateGroup className="state__group">
             <h2 className="state__subject">Guías entregadas</h2>
-            <p data-testid="deliveredGuides" className="state__info deliveredGuides">{guideDelivered}</p>
+            <p
+              data-testid="deliveredGuides"
+              className="state__info deliveredGuides"
+            >
+              {guideDelivered}
+            </p>
           </StateGroup>
         </StateElement>
       </StateContainer>
       <StatePicture className="state__picture">
-        <img className="state__img" src={Gift} alt="Almacenamiento, envío y rastreo por Hound Express" />
+        <img
+          className="state__img"
+          src={Gift}
+          alt="Almacenamiento, envío y rastreo por Hound Express"
+        />
       </StatePicture>
     </GeneralStateContainer>
   );

@@ -154,7 +154,7 @@ class GuideSerializer(ModelSerializer):
             raise ValidationError("Origen y destino no pueden ser iguales")
         return data
   
-    
+  
 class UserSerializer(ModelSerializer):
     password2 = CharField(
         style = { 'input_type': 'password' }, 
@@ -183,17 +183,17 @@ class UserSerializer(ModelSerializer):
         #Django no permite usuarios con el mismo username
         """Validar que el username sea único"""
         user = self.instance  # None en creación, User instance en update
-    
+  
         # Si es update y el username no cambió, permitirlo
         if user and user.username == value:
             return value
         # Verificar si ya existe
         query = User.objects.filter(username=value)
-    
+  
         # Si es update, excluir el usuario actual de la búsqueda
         if user:
             query = query.exclude(pk=user.pk)
-    
+  
         if query.exists():
             raise serializers.ValidationError(
                 "Este nombre de usuario ya está en uso."
@@ -205,35 +205,35 @@ class UserSerializer(ModelSerializer):
         password2 = data.get('password2')
         is_create = not self.instance
         changing_password = password or password2
-    
+  
         if is_create or changing_password:
             # Validar que ambas contraseñas estén presentes
             if not password or not password2:
                 raise ValidationError({
                     'password': 'Se requieren ambas contraseñas'
                 })
-        
+      
             # Validar que coincidan
             if password != password2:
                 raise ValidationError({
                     'password2': 'Las contraseñas no coinciden'
                 })
-    
+  
         return data   
-     
+   
 
     def validate_email(self, value):
         """Validar que email sea único (en creación y actualización)"""
         value = value.lower().strip()  # Normalizar
         qs = User.objects.filter(email=value)
-    
+  
         # Excluir instancia actual en updates
         if self.instance:
             qs = qs.exclude(pk=self.instance.pk)
-    
+  
         if qs.exists():
             raise ValidationError('Este email ya está registrado')  # Formato correcto
-    
+  
         return value
   
     def create(self, validated_data):
@@ -251,14 +251,14 @@ class UserSerializer(ModelSerializer):
         """Actualizar usuario existente"""
         validated_data.pop('password2', None)  # Limpiar password2
         password = validated_data.pop('password', None)
-    
+  
         # loop en lugar de asignaciones manuales
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
-    
+  
         if password:
             instance.set_password(password)
-    
+  
         instance.save()
         return instance
    
@@ -298,12 +298,12 @@ class EstatusSerializer(ModelSerializer):
             'Entregado',
             'Cancelado'
         ]
-    
+  
         if value not in VALID_STATUSES:
             raise ValidationError(
                 f"Status inválido. Valores permitidos: {', '.join(VALID_STATUSES)}"
             )
-    
+  
         return value
   
     def validate_guide(self, value):
@@ -314,55 +314,55 @@ class EstatusSerializer(ModelSerializer):
                 raise ValidationError(
                     "No se puede crear estatus para una guía cancelada"
                 )
-        
+      
             if value.current_status == 'Entregado':
                 raise ValidationError(
                     "No se puede crear estatus para una guía ya entregada"
                 )
-    
+  
         return value
   
     def validate(self, attrs):
         """Validar que no exista un Estatus duplicado para la misma guía"""
         guide = attrs.get('guide_data')
         new_status = attrs.get('guide_status')
-    
+  
         # En CREATE: validar que no exista ya un estatus con el mismo status para esta guía
         if not self.instance and guide and new_status:
             existe_duplicado = Estatus.objects.filter(
                 guide=guide,
                 status=new_status
             ).exists()
-        
+      
             if existe_duplicado:
                 raise ValidationError({
                     'status': f'Ya existe un registro de estatus "{new_status}" para la guía {guide.guide_number}'
                 })
-    
+  
         # En UPDATE: validar que no se duplique con otro registro (excepto el mismo)
         if self.instance and guide and new_status:
             existe_duplicado = Estatus.objects.filter(
                 guide=guide,
                 status=new_status
             ).exclude(id=self.instance.id).exists()
-        
+      
             if existe_duplicado:
                 raise ValidationError({
                     'status': f'Ya existe otro registro de estatus "{new_status}" para la guía {guide.guide_number}'
                 })
-    
+  
         return attrs
   
     def create(self, validated_data):
         """Crear estatus y actualizar currentStatus de la guía automáticamente"""
         # Crear el estatus
         estatus = Estatus.objects.create(**validated_data)
-    
+  
         # Actualizar el currentStatus de la guía
         guia = estatus.guide_data
         guia.current_status = estatus.guide_status
         guia.save()
-    
+  
         return estatus
   
     def update(self, instance, validated_data):
@@ -371,13 +371,13 @@ class EstatusSerializer(ModelSerializer):
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
-    
+  
         # Si cambió el status, actualizar la guía
         if 'status' in validated_data:
             guia = instance.guide_data
             guia.current_status = instance.guide_status
             guia.save()
-    
+  
         return instance
 ```
 
@@ -1971,6 +1971,108 @@ export default ServerError; // Export como default es común para componentes
 
 ```
 
-### Modales y general State
+## Modales y general State
 
 Como el estado general y los modales funcionan con la estructura de las guías anterior, antes de porder volver a ver un poco de claridad, debo refactorizarlos
+
+### GeneralState
+
+Parace que general state estaba bastante sencillo, solo un conteo de las guías de las que hacemos fetch, pero no veré la luz hasta que corrija  los modales, o los comente todos gg
+
+- \proyect-partner-company-m66\01-frontend\houndxpress2\src\components\GeneralState\index.tsx
+
+```ts
+import React, { useState, useEffect } from "react";
+import Gift from "../../assets/IMG/Animacion-beneficios-sistema-v2.gif";
+import {
+  GeneralStateContainer,
+  StateContainer,
+  StateElement,
+  StateGroup,
+  StatePicture,
+} from "./styles";
+import { useAppSelector } from "../../hooks/useStoreTypes";
+
+const GeneralState = () => {
+  //Local state
+  const [guideActive, setGuideActive] = useState<number>(0);
+  const [guideDelivered, setGuideDelivered] = useState<number>(0);
+  const [guidePending, setGuidePending] = useState<number>(0);
+  const [guideTransit, setGuideTransit] = useState<number>(0);
+
+  //Redux state
+  const guides = useAppSelector((state) => state.guides.guides);
+
+  //AutoUpdate the general numbers
+  useEffect(() => {
+    const active = guides.filter((e) => e.current_status != "Entregado").length;
+    const delivered = guides.filter(
+      (e) => e.current_status === "Entregado"
+    ).length;
+    const pending = guides.filter(
+      (guide) => guide.current_status === "Pendiente"
+    ).length;
+    const transit = guides.length - delivered - pending;
+
+    // Ahora sí, los logs mostrarán los valores correctos
+    /* console.log("guías activas", active);
+    console.log("guías entregadas", delivered);
+    console.log("guías pendientes", pending);
+    console.log("guías en tránsito", transit); */
+
+    setGuideActive(active);
+    setGuideDelivered(delivered);
+    setGuidePending(pending);
+    setGuideTransit(transit);
+  }, [guides]);
+
+  return (
+    /* <!--Panel de estado general--> */
+    <GeneralStateContainer id="general__state" className="state">
+      <StateContainer className="state__container">
+        <h2 className="state__title">Estado general</h2>
+        <hr />
+        <StateElement className="state__element">
+          <StateGroup className="state__group">
+            <h2 className="state__subject">Número total de guías activas</h2>
+            <p
+              data-testid="totalGuidesActive"
+              className="state__info totalGuidesActive"
+            >
+              {guideActive}
+            </p>
+          </StateGroup>
+          <StateGroup className="state__group">
+            <h2 className="state__subject">Guías en tránsito</h2>
+            <p
+              data-testid="onTransitGuides"
+              className="state__info onTransitGuides"
+            >
+              {guideTransit}
+            </p>
+          </StateGroup>
+          <StateGroup className="state__group">
+            <h2 className="state__subject">Guías entregadas</h2>
+            <p
+              data-testid="deliveredGuides"
+              className="state__info deliveredGuides"
+            >
+              {guideDelivered}
+            </p>
+          </StateGroup>
+        </StateElement>
+      </StateContainer>
+      <StatePicture className="state__picture">
+        <img
+          className="state__img"
+          src={Gift}
+          alt="Almacenamiento, envío y rastreo por Hound Express"
+        />
+      </StatePicture>
+    </GeneralStateContainer>
+  );
+};
+
+export default GeneralState;
+
+```
