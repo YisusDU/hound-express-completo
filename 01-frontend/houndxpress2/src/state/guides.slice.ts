@@ -7,6 +7,7 @@ import {
   GuidesState,
   InfoModalData,
   StagePayload,
+  UpdatePayload,
 } from "./types";
 import { Guide } from "../types/guides";
 import { GuideStage } from "../components/GuideReguister/types";
@@ -14,6 +15,7 @@ import {
   CREATE_GUIDE,
   FETCH_GUIDES,
   FETCH_STAGES,
+  UPDATE_STATUS,
 } from "../constants/actionTypes";
 import axios from "axios";
 import api from "../api";
@@ -81,6 +83,30 @@ export const fetchStages = createAsyncThunk<
   try {
     const response = await api.get<ApiStagesPayload[]>(
       `/api/v1/estatus/by-tracking/${guideNumber}/`
+    );
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      if (!error.response) {
+        return rejectWithValue(error.message);
+      }
+      return rejectWithValue(error.response.data as ApiError);
+    } else {
+      return rejectWithValue("Ocurrió un error inesperado");
+    }
+  }
+});
+
+// Actualizar guías
+export const updateStatus = createAsyncThunk<
+  ApiStagesPayload,
+  UpdatePayload,
+  { rejectValue: ApiError | string }
+>(UPDATE_STATUS, async (newGuideStage, { rejectWithValue }) => {
+  try {
+    const response = await api.post<ApiStagesPayload>(
+      "/api/v1/estatus/",
+      newGuideStage
     );
     return response.data;
   } catch (error) {
@@ -175,6 +201,23 @@ const guidesSlice = createSlice({
         if (action.payload) {
           state.error = action.payload;
         } else {
+          state.error = action.error.message || "Ocurrió un error desconocido";
+        }
+      })
+      // Actualizar estado
+      .addCase(updateStatus.pending, (state) => {
+        state.status = ASYNC_STATUS.PENDING;
+      })
+      .addCase(updateStatus.fulfilled, (state) => {
+        state.status = ASYNC_STATUS.FULFILLED;
+      })
+      .addCase(updateStatus.rejected, (state, action) => {
+        state.status = ASYNC_STATUS.REJECTED;
+        // Si usas rejectWithValue, el error viene en .payload
+        if (action.payload) {
+          state.error = action.payload;
+        } else {
+          // Si es un error no manejado, usa .error.message
           state.error = action.error.message || "Ocurrió un error desconocido";
         }
       });

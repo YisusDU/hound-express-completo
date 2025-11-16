@@ -9,9 +9,6 @@ import {
   active,
 } from "../../../../theme/mixins";
 
-interface StageProp {
-  $state?: string;
-}
 
 const ModalInpuSelect = () => css`
   width: 95%;
@@ -79,13 +76,6 @@ const ModalSelect = styled.select`
   ${ModalInpuSelect()};
 `;
 
-const ModalOptionSelect = styled.option<StageProp>`
-  display: ${(props) => {
-    if (props.$state?.includes("En tránsito")) return "none";
-    return "flex";
-  }};
-`;
-
 const ModalInput = styled.input`
   ${ModalInpuSelect()};
 `;
@@ -104,17 +94,15 @@ const ModalFormSubmit = styled.button`
 `;
 
 const ModalMessage = styled.h3`
- text-align: center;
- margin: 10px;
- font-weight: bold;
+  text-align: center;
+  margin: 10px;
+  font-weight: bold;
 `;
 
 export {
   ModalUpdateContainer,
   ModalForm,
   ModalSelect,
-  ModalOptionSelect,
-  ModalInput,
   ModalFormSubmit,
   ModalMessage,
 };

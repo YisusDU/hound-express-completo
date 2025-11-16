@@ -49,3 +49,9 @@ export interface ApiStagesPayload {
 
 // Lo que le pasamos a a la api para listar estados
 export type StagePayload = string;
+
+// Lo que envíamos para actualizar estados
+export type UpdatePayload = {
+  id: number;
+  guide_status: string;
+};

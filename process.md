@@ -212,7 +212,7 @@ class UserSerializer(ModelSerializer):
                 raise ValidationError({
                     'password': 'Se requieren ambas contraseñas'
                 })
-    
+  
             # Validar que coincidan
             if password != password2:
                 raise ValidationError({
@@ -314,7 +314,7 @@ class EstatusSerializer(ModelSerializer):
                 raise ValidationError(
                     "No se puede crear estatus para una guía cancelada"
                 )
-    
+  
             if value.current_status == 'Entregado':
                 raise ValidationError(
                     "No se puede crear estatus para una guía ya entregada"
@@ -333,7 +333,7 @@ class EstatusSerializer(ModelSerializer):
                 guide=guide,
                 status=new_status
             ).exists()
-    
+  
             if existe_duplicado:
                 raise ValidationError({
                     'status': f'Ya existe un registro de estatus "{new_status}" para la guía {guide.guide_number}'
@@ -345,7 +345,7 @@ class EstatusSerializer(ModelSerializer):
                 guide=guide,
                 status=new_status
             ).exclude(id=self.instance.id).exists()
-    
+  
             if existe_duplicado:
                 raise ValidationError({
                     'status': f'Ya existe otro registro de estatus "{new_status}" para la guía {guide.guide_number}'
@@ -2309,7 +2309,7 @@ export default guidesSlice.reducer;
 
 ```
 
-Y finalmente el componente, 
+Y finalmente el componente,
 
 - \proyect-partner-company-m66\01-frontend\houndxpress2\src\components\Modals\ModalHistory\HistoryPath\index.tsx
 
@@ -2479,5 +2479,311 @@ const HistoryTable = () => {
 };
 
 export default HistoryTable;
+
+```
+
+## ModalUpdate UpdateForm
+
+Al comenzar a integrar el thunk, noté que sería lógico haberlo hecho con el siguiente órden
+
+### actionType
+
+Definimos el nuevo actiontype para actualizar estados
+
+- \proyect-partner-company-m66\01-frontend\houndxpress2\src\constants\actionTypes.ts
+
+```ts
+// También se puede hacer con objetos, es tan solo una variante
+export const CREATE_GUIDE = "guide/createGuide";
+export const FETCH_GUIDES = "guide/fetchGuides";
+export const FETCH_STAGES = "guide/fetchStages";
+export const UPDATE_STATUS = "guide/updateStatus" //Se añade nuevo action
+
+```
+
+### Types
+
+Definimos los tipos que vamos a enviar por la api
+
+- \proyect-partner-company-m66\01-frontend\houndxpress2\src\state\types.ts
+
+```ts
+// Lo que envíamos para actualizar estados
+export type UpdatePayload = {
+  id: number;
+  guide_status: string;
+};
+
+```
+
+### Thunk en Slices
+
+Creamos el thunk con sus extrareducers
+
+- \proyect-partner-company-m66\01-frontend\houndxpress2\src\state\guides.slice.ts
+
+```ts
+// Actualizar guías
+export const updateStatus = createAsyncThunk<
+  ApiStagesPayload,
+  UpdatePayload,
+  { rejectValue: ApiError | string }
+>(UPDATE_STATUS, async (newGuideStage, { rejectWithValue }) => {
+  try {
+    const response = await api.post<ApiStagesPayload>(
+      "/api/v1/estatus/",
+      newGuideStage
+    );
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      if (!error.response) {
+        return rejectWithValue(error.message);
+      }
+      return rejectWithValue(error.response.data as ApiError);
+    } else {
+      return rejectWithValue("Ocurrió un error inesperado");
+    }
+  }
+});
+
+
+// Actualizar estado
+      .addCase(updateStatus.pending, (state) => {
+        state.status = ASYNC_STATUS.PENDING;
+      })
+      .addCase(updateStatus.fulfilled, (state) => {
+        state.status = ASYNC_STATUS.FULFILLED;
+      })
+      .addCase(updateStatus.rejected, (state, action) => {
+        state.status = ASYNC_STATUS.REJECTED;
+        // Si usas rejectWithValue, el error viene en .payload
+        if (action.payload) {
+          state.error = action.payload;
+        } else {
+          // Si es un error no manejado, usa .error.message
+          state.error = action.error.message || "Ocurrió un error desconocido";
+        }
+      });
+```
+
+### Lógica de update form
+
+La mayoría de la lógica está encapsulada en un hook , por lo que  lo ajustamos para manejar las acciones asincrónicas
+
+- \proyect-partner-company-m66\01-frontend\houndxpress2\src\hooks\useUpdateForm.ts
+
+```ts
+import { SetStateAction, useState } from "react";
+import validateFields from "./useValidateFields";
+import { Guide } from "../components/GuideReguister/types";
+import { useAppDispatch, useAppSelector } from "./useStoreTypes";
+import { ApiError } from "../state/types";
+import { updateStatus } from "../state/guides.slice";
+// import { updateGuide } from "../state/guides.slice";
+
+const useUpdateForm = () => {
+  //Redux state
+  const dispatch = useAppDispatch();
+
+  //Set errors from the form
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
+  // Encontrar la guía actual
+  const guides = useAppSelector((state) => state.guides.guides);
+  const guideNumber = useAppSelector(
+    (state) => state.guides.modalData.guideNumber
+  );
+  const currentGuide = guides.find((g) => g.guide_number === guideNumber);
+
+  //Validate the form on submit
+  const handleValidate = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+
+    //validate all the fields empty
+    const requiredFields = ["guide__date", "guide__hour", "guide__status"];
+    const { isValid } = validateFields(requiredFields, formData, setErrors);
+
+    // console.log("Formulario válido:", validForm ? "true" : "false");
+    if (!isValid) {
+      return;
+    }
+
+    // Validar que se encontró la guía
+    if (!currentGuide) {
+      return console.error("Guía no encontrada");
+    }
+
+    //Take the info into an object
+    const newGuideStage = {
+      id: currentGuide.id,
+      guide_status: (formData.get("guide__status") as string)?.trim() || "",
+    };
+
+    try {
+      await dispatch(updateStatus(newGuideStage)).unwrap();
+      alert("Guía actualizada con éxito");
+      //clean the form
+      form.reset();
+    } catch (rejectedValue) {
+      console.error("Falló al actualiar la guía:", rejectedValue);
+      alert("There was an error creating your order. Please try again.");
+      if (typeof rejectedValue === "object" && rejectedValue !== null) {
+        // Transforma el ApiError en el estado de errores local
+        const backendErrors: { [key: string]: string } = {};
+        for (const [key, value] of Object.entries(rejectedValue as ApiError)) {
+          // Asumimos que los nombres de campo coinciden (ej. guide_number)
+          // y tomamos solo el primer mensaje de error
+          const newKey = `guide__${key.split("_")[1]}`; // Transforma 'guide_number' a 'guide__number'
+          if (Array.isArray(value)) {
+            backendErrors[newKey] = value[0];
+          }
+        }
+        setErrors(backendErrors);
+      } else {
+        // Es un error de string genérico, no lo podemos poner en un campo
+        // 'renderServerError' lo mostrará de todas formas.
+        console.log("Error de servidor genérico:", rejectedValue);
+      }
+    }
+  };
+  return { handleValidate, errors, setErrors, currentGuide };
+};
+
+export { useUpdateForm };
+
+```
+
+### UpdateForm / index.ts
+
+Por último, aplicamos los cambios al index del componente y nos aseguramos de recibir todo lo que nos manda el hook
+
+> Nota
+>
+> Adicionalmente borramos los componentes que ya no usaremos de los estilos, los reenderizados serán desde react, no desde los estilos
+
+- \proyect-partner-company-m66\01-frontend\houndxpress2\src\components\Modals\ModalUpdate\UpdateForm\index.tsx
+
+```ts
+import React from "react";
+import { useUpdateForm } from "../../../../hooks/useUpdateForm";
+import {
+  ModalUpdateContainer,
+  ModalForm,
+  ModalSelect,
+  ModalFormSubmit,
+  ModalMessage,
+} from "./styles";
+import { useCleanErrorOnFocus } from "../../../../hooks/useCleanErrorOnFocus";
+import { useAppSelector } from "../../../../hooks/useStoreTypes";
+
+interface RefEls {
+  focusableEls: HTMLElement[];
+}
+
+const UpdateForm = ({ focusableEls }: RefEls) => {
+  //Redux state
+  const UpdateModalOpen = useAppSelector(
+    (state) => state.guides.modalData.typeModal
+  );
+
+  const { handleValidate, errors, setErrors, currentGuide } = useUpdateForm();
+  /* useEffect(()=> {
+    console.log("currentGuideUpdate", currentGuide)
+  }) */
+  //Function to clear errors on focus
+  const clearErrosOnFocus = useCleanErrorOnFocus(errors, setErrors);
+
+
+  //Make a focus trap for the links container
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLFormElement>) => {
+    if (e.key !== "Tab" || focusableEls.length === 0) return;
+    const first = focusableEls[0];
+    const last = focusableEls[focusableEls.length - 1];
+    if (e.shiftKey) {
+      if (document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      }
+    } else {
+      if (document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+  };
+
+  return (
+    <ModalUpdateContainer>
+      {currentGuide?.current_status !== "Entregado" && (
+        <ModalForm
+          action="#"
+          className="tableModal__form"
+          onSubmit={handleValidate}
+          onKeyDown={UpdateModalOpen === "Update" ? handleKeyDown : undefined}
+        >
+          <label className="table__form--label" htmlFor="guide__newStatus">
+            Nuevo estado:
+          </label>
+          <ModalSelect
+            className="tableModal__form--select tableModal__input"
+            id="guide__newStatus"
+            name="guide__status"
+            title="Selecciona el estado actualizado del envío"
+            aria-label="Selecciona el estado actualizado del envío"
+            onFocus={clearErrosOnFocus}
+          >
+            <option className="tableModal__form--option option--1" value="">
+              Nuevo estado:
+            </option>
+            <option
+              className="tableModal__form--option option--2"
+              value="Pentiente"
+            >
+              Pentiente 📦
+            </option>
+            <option
+              className="tableModal__form--option option--2"
+              value="En tránsito"
+            >
+              En tránsito 🚚
+            </option>
+            <option
+              className="tableModal__form--option option--3"
+              value="Entregado"
+            >
+              Entregado ✅
+            </option>
+            <option
+              className="tableModal__form--option option--2"
+              value="Cancelado"
+            >
+              Cancelado ❌
+            </option>
+          </ModalSelect>
+          <span className="error-message">{errors.guide__status}</span>
+          <br />
+          <ModalFormSubmit
+            className="tableModal__form--submit"
+            type="submit"
+            aria-label={`Actualizar estado de la guía ${currentGuide?.guide_number}`}
+            title={`Actualizar estado de la guía ${currentGuide?.guide_number}`}
+          >
+            Actualizar
+          </ModalFormSubmit>
+        </ModalForm>
+      )}
+      {currentGuide?.current_status === "Entregado" && (
+        <ModalMessage>
+          *Tu envío ya fue entregado, no es posible actualizar su estado*
+        </ModalMessage>
+      )}
+    </ModalUpdateContainer>
+  );
+};
+
+export default UpdateForm;
 
 ```
