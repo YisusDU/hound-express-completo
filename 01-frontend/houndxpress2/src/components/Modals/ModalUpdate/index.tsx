@@ -6,23 +6,23 @@ import { Guide } from "../../../types/guides";
 import { useModalGuides } from "../../../hooks/useModalGuides";
 import XIcon from "../../../assets/IMG/x-solid.svg";
 import { useAppSelector } from "../../../hooks/useStoreTypes";
+import { ApiGuidePayload } from "../../../state/types";
 
-export interface ModalUpdateProp {
-  modalData: string;
-  guides: Guide[];
-  setGuides: React.Dispatch<SetStateAction<Guide[]>>;
-  setModalData: React.Dispatch<SetStateAction<string>>;
-  isOpenModal: string;
-  setIsOpenModal: React.Dispatch<SetStateAction<"Update" | "History" | "">>;
-}
+// export interface ModalUpdateProp {
+//   modalData: string;
+//   guides: ApiGuidePayload[];
+//   setGuides: React.Dispatch<SetStateAction<ApiGuidePayload[]>>;
+//   setModalData: React.Dispatch<SetStateAction<string>>;
+//   isOpenModal: string;
+//   setIsOpenModal: React.Dispatch<SetStateAction<"Update" | "History" | "">>;
+// }
 
 const ModalUpdate = () => {
-  
   //Redux state typeModal
   const isOpenModal = useAppSelector(
     (state) => state.guides.modalData.typeModal
   );
-const { cleanGuideData } = useModalGuides();
+  const { cleanGuideData } = useModalGuides();
 
   //Make a focus trap for the inputs container
   const inputsContainer = useRef<HTMLUListElement>(null);

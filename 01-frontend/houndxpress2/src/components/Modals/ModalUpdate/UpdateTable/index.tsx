@@ -15,10 +15,28 @@ const UpdateTable = () => {
   const guideNumber = useAppSelector(
     (state) => state.guides.modalData.guideNumber
   );
-  const currentGuide = guides.find((g) => g.guide__number === guideNumber);
+  const currentGuide = guides.find((g) => g.guide_number === guideNumber);
 
   //Function to dragg the table on scroll, it needs styles of overflow
   const tableRef = useDraggTable();
+
+  let fecha: string | null = null;
+  let hora: string | null = null;
+
+  if (currentGuide) {
+    const dateObj = new Date(currentGuide.updated_at);
+    // 'es-MX' usa el formato DD/MM/YYYY
+    fecha = dateObj.toLocaleDateString("es-MX", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+    hora = dateObj.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+  }
 
   return (
     <UpdateTableContainer ref={tableRef}>
@@ -39,31 +57,13 @@ const UpdateTable = () => {
         <tbody className="table__currentGuide--body">
           {currentGuide ? (
             <tr>
-              <td data-label="Número de guía">{currentGuide.guide__number}</td>
-              <td data-label="Estado">
-                {
-                  currentGuide.guide__stage[
-                    currentGuide.guide__stage.length - 1
-                  ]?.guide__status
-                }
-              </td>
-              <td data-label="Origen">{currentGuide.guide__origin}</td>
-              <td data-label="Destino">{currentGuide.guide__destination}</td>
-              <td data-label="Destinatario">{currentGuide.guide__recipient}</td>
-              <td data-label="Fecha">
-                {
-                  currentGuide.guide__stage[
-                    currentGuide.guide__stage.length - 1
-                  ]?.guide__date
-                }
-              </td>
-              <td data-label="Hora">
-                {
-                  currentGuide.guide__stage[
-                    currentGuide.guide__stage.length - 1
-                  ]?.guide__hour
-                }
-              </td>
+              <td data-label="Número de guía">{currentGuide.guide_number}</td>
+              <td data-label="Estado">{currentGuide.current_status}</td>
+              <td data-label="Origen">{currentGuide.guide_origin}</td>
+              <td data-label="Destino">{currentGuide.guide_destination}</td>
+              <td data-label="Destinatario">{currentGuide.guide_recipient}</td>
+              <td data-label="Fecha">{fecha}</td>
+              <td data-label="Hora">{hora}</td>
             </tr>
           ) : (
             <tr>

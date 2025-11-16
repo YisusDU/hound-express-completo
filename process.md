@@ -2787,3 +2787,100 @@ const UpdateForm = ({ focusableEls }: RefEls) => {
 export default UpdateForm;
 
 ```
+
+## ModalUpdate /UpdateTable
+
+Se actualiza el subcomponente UpdateTable y se añade lógica para descomponer la fecha y hora
+
+- \proyect-partner-company-m66\01-frontend\houndxpress2\src\components\Modals\ModalUpdate\UpdateTable\index.tsx
+
+```ts 
+import React from "react";
+import { Guide } from "../../../../types/guides";
+import { UpdateTableContainer } from "./styles";
+import useDraggTable from "../../../../hooks/useDraggTable";
+import { useAppSelector } from "../../../../hooks/useStoreTypes";
+
+export interface UpdateGuide {
+  guideIndex: number;
+  currentGuide: Guide;
+}
+
+const UpdateTable = () => {
+  //Redux state
+  const guides = useAppSelector((state) => state.guides.guides);
+  const guideNumber = useAppSelector(
+    (state) => state.guides.modalData.guideNumber
+  );
+  const currentGuide = guides.find((g) => g.guide_number === guideNumber);
+
+  //Function to dragg the table on scroll, it needs styles of overflow
+  const tableRef = useDraggTable();
+
+  let fecha: string | null = null;
+  let hora: string | null = null;
+
+  if (currentGuide) {
+    const dateObj = new Date(currentGuide.updated_at);
+    // 'es-MX' usa el formato DD/MM/YYYY
+    fecha = dateObj.toLocaleDateString("es-MX", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+    hora = dateObj.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+  }
+
+  return (
+    <UpdateTableContainer ref={tableRef}>
+      <table className="table__currentGuide">
+        <thead className="table__currentGuide--header">
+          <tr className="table__modalUptade--row">
+            <th className="guide__table--modal">Número de guía</th>
+            <th className="guide__table--modal">Estado actual</th>
+            <th className="guide__table--modal">Origen</th>
+            <th className="guide__table--modal">Destino</th>
+            <th className="guide__table--modal">Destinatario</th>
+            <th className="guide__table--modal">
+              Fecha de la última actualización.
+            </th>
+            <th className="guide__table--modal">Hora de actualización</th>
+          </tr>
+        </thead>
+        <tbody className="table__currentGuide--body">
+          {currentGuide ? (
+            <tr>
+              <td data-label="Número de guía">{currentGuide.guide_number}</td>
+              <td data-label="Estado">{currentGuide.current_status}</td>
+              <td data-label="Origen">{currentGuide.guide_origin}</td>
+              <td data-label="Destino">{currentGuide.guide_destination}</td>
+              <td data-label="Destinatario">{currentGuide.guide_recipient}</td>
+              <td data-label="Fecha">{fecha}</td>
+              <td data-label="Hora">{hora}</td>
+            </tr>
+          ) : (
+            <tr>
+              <td>No hay valores para mostrar</td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </UpdateTableContainer>
+  );
+};
+
+export default UpdateTable;
+
+```
+
+## Debuggin
+
+Iniciamos la etapa de debugeo y pulido general 
+
+### filteredGuides.map is not a function
+
+Lo primero que me salta al cargar la app con el backend corriendo es el error encabezado, el backend responde con estatus 200 por lo que creo que es la forma en la que el backend está devolviendo las respuestas, en una lista con data seguido de otra lista con la info
