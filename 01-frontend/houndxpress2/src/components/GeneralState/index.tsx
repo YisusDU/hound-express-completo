@@ -21,20 +21,23 @@ const GeneralState = () => {
 
   //AutoUpdate the general numbers
   useEffect(() => {
-    const active = guides.filter((e) => e.current_status != "Entregado").length;
+    const active = guides.filter(
+      (e) =>
+        e.current_status !== "Entregado" && e.current_status !== "Cancelado"
+    ).length;
     const delivered = guides.filter(
       (e) => e.current_status === "Entregado"
     ).length;
     const pending = guides.filter(
       (guide) => guide.current_status === "Pendiente"
     ).length;
-    const transit = guides.length - delivered - pending;
 
-    // Ahora sí, los logs mostrarán los valores correctos
-    /* console.log("guías activas", active);
-    console.log("guías entregadas", delivered);
-    console.log("guías pendientes", pending);
-    console.log("guías en tránsito", transit); */
+    const cancelled = guides.filter(
+      (g) => g.current_status === "Cancelado"
+    ).length;
+    const transit = guides.filter(
+      (g) => g.current_status === "En tránsito"
+    ).length;
 
     setGuideActive(active);
     setGuideDelivered(delivered);

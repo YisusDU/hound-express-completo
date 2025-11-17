@@ -3715,7 +3715,7 @@ Le he preguntado a gemini que hacer y me ha dado dos buenas opciones, una instan
 
 Solo haré este pequeño cambio de momento, pero es bueno conocer otros horizontes
 
-- \proyect-partner-company-m66\01-frontend\houndxpress2\src\components\GuideList\index.tsx
+- [ ] \proyect-partner-company-m66\01-frontend\houndxpress2\src\components\GuideList\index.tsx
 
 ```ts
   // Disparamos la operación asíncrona para listar guías
@@ -3725,5 +3725,36 @@ Solo haré este pequeño cambio de momento, pero es bueno conocer otros horizont
 ```
 
 ### Bug en Estado General
+
+He notado que la nueva introducción de estados Creado y Cancelado está generando ruido a la hora de calcular las guías activas
+
+- \proyect-partner-company-m66\01-frontend\houndxpress2\src\components\GeneralState\index.tsx
+
+```ts
+ useEffect(() => {
+    const active = guides.filter(
+      (e) =>
+        e.current_status !== "Entregado" && e.current_status !== "Cancelado"
+    ).length;
+    const delivered = guides.filter(
+      (e) => e.current_status === "Entregado"
+    ).length;
+    const pending = guides.filter(
+      (guide) => guide.current_status === "Pendiente"
+    ).length;
+
+    const cancelled = guides.filter(
+      (g) => g.current_status === "Cancelado"
+    ).length;
+    const transit = guides.filter(
+      (g) => g.current_status === "En tránsito"
+    ).length;
+
+    setGuideActive(active);
+    setGuideDelivered(delivered);
+    setGuidePending(pending);
+    setGuideTransit(transit);
+  }, [guides]);
+```
 
 ### Filtrar por número de guía
