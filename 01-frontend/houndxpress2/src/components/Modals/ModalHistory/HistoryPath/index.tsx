@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import Paw from "../../../../assets/IMG/paw-solid.svg";
 import {
+  PathContainer,
   ModalHistoryPath,
   ModalPathContent,
   ModalSVGContainer,
@@ -33,7 +34,7 @@ const HistoryPath = () => {
   }, [dispatch, guideNumber]);
 
   return (
-    <section>
+    <PathContainer>
       {/* Dinamics paths of following  */}
       {status == ASYNC_STATUS.FULFILLED &&
         (stages && stages.length >= 1 ? (
@@ -65,6 +66,8 @@ const HistoryPath = () => {
                           ? "status--transit"
                           : stage.guide_status === "Entregado"
                           ? "status--delivered"
+                          : stage.guide_status === "Cancelado"
+                          ? "status--cancelled"
                           : ""
                       }
                     >
@@ -79,6 +82,8 @@ const HistoryPath = () => {
                           "Tu envío está en camino"}
                         {stage.guide_status === "Entregado" &&
                           "¡Tu envío fue entregado!"}
+                        {stage.guide_status === "Cancelado" &&
+                          "¡Tu envío fue Cancelado!"}
                       </span>
                     </div>
                     <hr />
@@ -96,7 +101,7 @@ const HistoryPath = () => {
         </div>
       )}
       {status === ASYNC_STATUS.REJECTED && <ServerError error={error} />}
-    </section>
+    </PathContainer>
   );
 };
 

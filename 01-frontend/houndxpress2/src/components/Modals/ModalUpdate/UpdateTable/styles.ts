@@ -14,12 +14,6 @@ const UpdateTableContainer = styled.section`
 
   //Responsive styles
   @media screen and (max-width: ${sizesMedia.xmd}) {
-    width: 100%;
-    /* overflow-x: scroll;
-    ${cursorGrab()};
-    ${cursorGrabbing()}; */
-  }
-  @media screen and (max-width: ${sizesMedia.xmd}) {
     table {
       thead {
         display: none;

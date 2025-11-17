@@ -7,13 +7,15 @@ import {
 import { cursorGrab, cursorGrabbing } from "../../../../theme/mixins";
 
 const HistoryTableContainer = styled.section`
-  //Responsive styles
+  position: relative;
+  transform: translate(0);
+  top: 0;
+  left: 0;
 
-  /* @media screen and (max-width: ${sizesMedia.xsm}) {
-    overflow-x: scroll;
-    ${cursorGrab()};
-    ${cursorGrabbing()};
-  } */
+  &::after {
+    display: none;
+  }
+  //Responsive styles
   @media screen and (max-width: ${sizesMedia.xmd}) {
     table {
       thead {
@@ -25,18 +27,17 @@ const HistoryTableContainer = styled.section`
       td {
         display: block;
         width: 100%;
-        line-height: normal;
+        // line-height: normal;
       }
 
       tr {
-        margin-bottom: 1.5rem;
         border: 1px solid ${primaryColor};
         padding: 0.5rem;
       }
 
       td {
         text-align: right;
-        padding-left: 50%;
+        padding-left: 50% !important;
         position: relative;
         font-size: 1rem;
         border: none;

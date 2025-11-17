@@ -1,6 +1,10 @@
 import styled from "styled-components";
 import { box, flex } from "../../../../theme/mixins";
 
+const PathContainer = styled.section`
+  ${flex("column-reverse")}
+`;
+
 const ModalHistoryPath = styled.section`
   ${flex("row", "start", "center")}
   ${box("100%", "0.5rem", "0")};
@@ -26,17 +30,21 @@ const ModalPathContent = styled.section`
     font-weight: bold;
 
     &.status--pending {
-      color: orange;
+      color: #664200;
     }
 
     &.status--transit {
-      color: yellow;
+      color: ##4c4c00;
     }
 
     &.status--delivered {
-      color: green;
+      color: #005600;
+    }
+
+    &.status--cancelled {
+      color: #c30000;
     }
   }
 `;
 
-export { ModalHistoryPath, ModalPathContent, ModalSVGContainer };
+export { PathContainer, ModalHistoryPath, ModalPathContent, ModalSVGContainer };
