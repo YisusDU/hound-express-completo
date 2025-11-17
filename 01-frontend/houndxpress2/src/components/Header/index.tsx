@@ -1,9 +1,4 @@
-import React, {
-  useState,
-  forwardRef,
-  useEffect,
-  useRef,
-} from "react";
+import React, { useState, forwardRef, useEffect, useRef } from "react";
 import logoHeader from "../../assets/IMG/M6-imagotipo-Hound_Express/logo-Hound_Express-bg-white.png";
 import buttonShow from "../../assets/IMG/bars-solid.svg";
 import buttonHidde from "../../assets/IMG/x-solid.svg";
@@ -52,7 +47,9 @@ const Header = forwardRef<HTMLElement>(({}, ref) => {
     const container = linksContainerRef.current;
     if (!container) return;
     const selectors = "a[href], button:not([disabled])";
-    const elements = Array.from(container.querySelectorAll<HTMLElement>(selectors));
+    const elements = Array.from(
+      container.querySelectorAll<HTMLElement>(selectors)
+    );
     setFocusableEls(elements);
     if (elements.length) elements[0].focus();
   }, [openMenu]);
@@ -189,7 +186,7 @@ const Header = forwardRef<HTMLElement>(({}, ref) => {
             <li>
               <a
                 className="header__link"
-                href="#"
+                href="#guide__list"
                 rel="noopener"
                 onClick={handleLinkClick}
                 aria-label="Ir a Buscar Guías"

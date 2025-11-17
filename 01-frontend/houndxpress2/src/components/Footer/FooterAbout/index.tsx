@@ -124,7 +124,7 @@ const FooterAbout = () => {
             <li>
               <a
                 className="footer__link"
-                href="#"
+                href="#guide__list"
                 rel="noopener"
                 aria-label="Ir a Buscar Guías"
                 title="Ir a Buscar Guías"
@@ -132,7 +132,7 @@ const FooterAbout = () => {
                 🔍 Buscar Guías
               </a>
             </li>
-            <li>
+            {/* <li>
               <a
                 className="footer__link"
                 href="#"
@@ -142,7 +142,7 @@ const FooterAbout = () => {
               >
                 Historial de Guías
               </a>
-            </li>
+            </li> */}
           </ul>
         </FooterNav>
       </FooterNavContainer>

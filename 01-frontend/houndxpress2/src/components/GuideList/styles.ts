@@ -44,9 +44,9 @@ const GuideListContainer = styled.section`
 `;
 
 const GuideFilter = styled.form`
-  ${flex("row", "center", "space-evenly")}
+  ${flex("column", "center", "space-evenly")}
   background-color: ${secondaryColor};
-  width: fit-content;
+  width: 90%;
   margin: 0 auto;
   padding: 10px;
   gap: 10px;
@@ -56,9 +56,21 @@ const GuideFilter = styled.form`
     color: ${primaryColor};
   }
 
-  select {
+  select,
+  input {
+    width:80%;
     font-size: clamp(0.8rem, 1rem, 1.2rem);
     ${colorBg("#fff", secondaryColor)}
+    border: none;
+    border-bottom: 0.125rem solid #fff;
+
+    &::placeholder {
+      color: #fff;
+    }
+
+    &:focus-visible {
+      outline: none;
+    }
   }
 
   button {
@@ -102,7 +114,7 @@ const GuideTable = styled.table`
     }
 
     td:last-child {
-    display: flex;
+      display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;

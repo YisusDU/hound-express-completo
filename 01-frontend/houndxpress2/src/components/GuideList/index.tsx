@@ -16,7 +16,8 @@ import ServerError from "../ServerError";
 
 const GuideList = () => {
   //Variables to aply some filter
-  const [filter, setFilter] = useState<string>("");
+  const [filterState, setFilterState] = useState<string>("");
+  const [filterNumber, setFilterNumber] = useState<string>("");
 
   //Function to dragg the table on scroll, it needs styles of overflow
   const tableRef = useDraggTable();
@@ -31,27 +32,39 @@ const GuideList = () => {
 
   const openModal = (guide: string, type: ModalType) => {
     dispatch(changeModalData({ guideNumber: guide, typeModal: type }));
-
-    // Guardar el botón activo para usarlo luego
   };
 
   // Disparamos la operación asíncrona para listar guías
   useEffect(() => {
     dispatch(fetchGuides());
-  }, [dispatch, ]);
+  }, [dispatch]);
 
   // Filtrar guías por estatus
   const filteredGuides = useMemo(() => {
-    const cleanFilter = filter.toLowerCase();
+    // 1. Normaliza tus filtros primero
+    const cleanStateFilter = filterState.toLowerCase();
+    const cleanNumberFilter = filterNumber.toLowerCase();
 
-    // Si el filtro está vacío, devuelve todas
-    if (cleanFilter === "") {
-      return guides;
+    // 2. Inicia con la lista completa
+    let tempGuides = guides;
+
+    // 3. Aplica el filtro de estado (si está activo)
+    if (cleanStateFilter) {
+      tempGuides = tempGuides.filter(
+        (g) => g.current_status.toLowerCase() === cleanStateFilter
+      );
     }
 
-    // Si no, filtra por coincidencia exacta
-    return guides.filter((g) => g.current_status.toLowerCase() === cleanFilter);
-  }, [guides, filter]);
+    // 4. Aplica el filtro de número (si está activo)
+    if (cleanNumberFilter) {
+      tempGuides = tempGuides.filter((g) =>
+        g.guide_number.toLowerCase().includes(cleanNumberFilter)
+      );
+    }
+
+    // 5. Devuelve la lista que pasó por todos los filtros
+    return tempGuides;
+  }, [guides, filterState, filterNumber]);
 
   //Function for accesibility of aria-expanded
   const [ariaExpanded, setAriaExpanded] = useState(false);
@@ -61,6 +74,11 @@ const GuideList = () => {
   const modalFilled2 = useAppSelector(
     (state) => state.guides.modalData.typeModal
   );
+
+  const resetFilter = () => {
+    setFilterState("");
+    setFilterNumber("");
+  };
 
   useEffect(() => {
     if (modalFilled1 === "" && modalFilled2 === "") {
@@ -79,8 +97,8 @@ const GuideList = () => {
         <select
           name="filterState"
           id="filterState"
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
+          value={filterState}
+          onChange={(e) => setFilterState(e.target.value)}
           aria-controls="mainTable"
           aria-label="Filtrar por estado de envío:"
           title="Filtrar por estado de envío:"
@@ -90,9 +108,20 @@ const GuideList = () => {
           <option value="En tránsito">En tránsito</option>
           <option value="Entregado">Entregados</option>
         </select>
+        <hr />
+        <label htmlFor="findGuide">Buscar guía:</label>
+        <input
+          type="text"
+          name="findGuide"
+          id="findGuide"
+          value={filterNumber}
+          onChange={(e) => setFilterNumber(e.target.value)}
+          title="Buscar guía"
+          placeholder="Añade un número de guía"
+        />
         <button
           type="button"
-          onClick={() => setFilter("")}
+          onClick={resetFilter}
           role="button"
           aria-label="Limpiar filtro"
           title="Limpiar filtro"

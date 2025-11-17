@@ -3758,3 +3758,36 @@ He notado que la nueva introducción de estados Creado y Cancelado está generan
 ```
 
 ### Filtrar por número de guía
+
+Quiero añadir un filtro con memoria para buscar por número de guía entre las guías de la tabla principal
+
+- \proyect-partner-company-m66\01-frontend\houndxpress2\src\components\GuideList\index.tsx
+
+```ts
+// Filtrar guías por estatus
+  const filteredGuides = useMemo(() => {
+    // 1. Normaliza tus filtros primero
+    const cleanStateFilter = filterState.toLowerCase();
+    const cleanNumberFilter = filterNumber.toLowerCase();
+
+    // 2. Inicia con la lista completa
+    let tempGuides = guides;
+
+    // 3. Aplica el filtro de estado (si está activo)
+    if (cleanStateFilter) {
+      tempGuides = tempGuides.filter(
+        (g) => g.current_status.toLowerCase() === cleanStateFilter
+      );
+    }
+
+    // 4. Aplica el filtro de número (si está activo)
+    if (cleanNumberFilter) {
+      tempGuides = tempGuides.filter((g) =>
+        g.guide_number.toLowerCase().includes(cleanNumberFilter)
+      );
+    }
+
+    // 5. Devuelve la lista que pasó por todos los filtros
+    return tempGuides;
+  }, [guides, filterState, filterNumber]);
+```
