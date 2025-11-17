@@ -17,7 +17,7 @@ const App = () => {
   const headerRef = useRef<HTMLElement>(null);
   const mainRef = useRef<HTMLElement>(null);
 
-  useFixedHeader({ mainRef, headerRef });
+  useFixedHeader();
 
   return (
     <ThemeProvider theme={Theme}>

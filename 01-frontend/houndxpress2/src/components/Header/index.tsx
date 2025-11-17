@@ -78,21 +78,23 @@ const Header = forwardRef<HTMLElement>(({}, ref) => {
       className={`header ${menuDisplay ? "fixed" : ""}`}
       id="start"
     >
-      <section className="header__top">
-        <a
-          href="index.html"
-          rel="noopener"
-          aria-label="Recargar página"
-          role="link"
-          title="Recargar página"
-        >
-          <img
-            className="header__logo"
-            src={logoHeader}
-            alt="Logotipo Hound Express"
-          />
-        </a>
-      </section>
+      {!menuDisplay && (
+        <section className="header__top">
+          <a
+            href="index.html"
+            rel="noopener"
+            aria-label="Recargar página"
+            role="link"
+            title="Recargar página"
+          >
+            <img
+              className="header__logo"
+              src={logoHeader}
+              alt="Logotipo Hound Express"
+            />
+          </a>
+        </section>
+      )}
       <HeaderBottom className="header__bottom">
         <HeaderNav className="header__nav" ref={linksContainerRef}>
           <HeaderIcons className={`header__show ${openMenu ? "hidde" : ""}`}>

@@ -1,6 +1,8 @@
 import { createGlobalStyle } from "styled-components";
 import reset from "styled-reset";
 
+const HEADER_HEIGHT = "165px";
+
 const GlobalStyles = createGlobalStyle`
     ${reset}
     * {
@@ -14,7 +16,8 @@ const GlobalStyles = createGlobalStyle`
 
     html {
         min-width: 19rem !Important;
-    }
+        scroll-padding-top: ${HEADER_HEIGHT};
+        }
     body{
         font-family: ${(props) => props.theme.fonts.base};
         scroll-behavior: smooth;

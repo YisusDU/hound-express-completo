@@ -36,9 +36,6 @@ const HeaderContainer = styled.header`
     align-items: center;
     box-shadow: 18px 8px 8px 7px rgb(0 0 0 / 20%);
 
-    .header__top {
-      display: none;
-    }
   }
 
   .header__top {
