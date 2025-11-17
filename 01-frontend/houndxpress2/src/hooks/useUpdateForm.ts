@@ -3,7 +3,7 @@ import validateFields from "./useValidateFields";
 import { Guide } from "../components/GuideReguister/types";
 import { useAppDispatch, useAppSelector } from "./useStoreTypes";
 import { ApiError } from "../state/types";
-import { updateStatus } from "../state/guides.slice";
+import { fetchGuides, updateStatus } from "../state/guides.slice";
 // import { updateGuide } from "../state/guides.slice";
 
 const useUpdateForm = () => {
@@ -27,7 +27,7 @@ const useUpdateForm = () => {
     const formData = new FormData(form);
 
     //validate all the fields empty
-    const requiredFields = ["guide__date", "guide__hour", "guide__status"];
+    const requiredFields = ["guide__status"];
     const { isValid } = validateFields(requiredFields, formData, setErrors);
 
     // console.log("Formulario válido:", validForm ? "true" : "false");
@@ -42,12 +42,13 @@ const useUpdateForm = () => {
 
     //Take the info into an object
     const newGuideStage = {
-      id: currentGuide.id,
+      guide_id: currentGuide.id,
       guide_status: (formData.get("guide__status") as string)?.trim() || "",
     };
 
     try {
       await dispatch(updateStatus(newGuideStage)).unwrap();
+      await dispatch(fetchGuides());
       alert("Guía actualizada con éxito");
       //clean the form
       form.reset();

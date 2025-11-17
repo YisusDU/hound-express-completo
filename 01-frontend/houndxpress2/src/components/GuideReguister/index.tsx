@@ -16,7 +16,7 @@ import ServerError from "../ServerError";
 const GuideRegister = () => {
   const { errors, handleValidate, setErrors } = useGuideRegister();
   const cleanErrorOnFocus = useCleanErrorOnFocus(errors, setErrors);
-  const status = useAppSelector((state) => state.guides.status);
+  const status = useAppSelector((state) => state.guides.createStatus);
 
   return (
     <GuideRegisterContainer className="guide__register" id="guide__register">
@@ -63,7 +63,7 @@ const GuideRegister = () => {
             name="guide__origin"
             type="text"
             inputMode="text"
-            maxLength={30}
+            maxLength={120}
             placeholder="Origen del envío:"
             aria-label="Origen del envío:"
             title="Añade la ciudad de origen"
@@ -87,7 +87,7 @@ const GuideRegister = () => {
             name="guide__destination"
             type="text"
             inputMode="text"
-            maxLength={30}
+            maxLength={120}
             placeholder="Destino del envío:"
             aria-label="Añade el destino del envío:"
             title="Añade la ciudad de destino"
@@ -136,7 +136,6 @@ const GuideRegister = () => {
             Enviar
           </GuideSubmit>
         </GuideForm>
-        {status === ASYNC_STATUS.REJECTED && <ServerError error={errors} />}
       </GuideContainer>
 
       {/* <!--Animacion--> */}

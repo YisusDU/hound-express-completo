@@ -26,7 +26,6 @@ const ServerError = ({ error }: ServerErrorProps) => {
   // --- CASO 2: El error es un objeto ApiError ---
   return (
     <div className="server-error" role="alert">
-      <strong>Por favor, corrige los siguientes errores:</strong>
       <ul>
         {Object.entries(error).map(([field, messages]) => (
           <li key={field}>

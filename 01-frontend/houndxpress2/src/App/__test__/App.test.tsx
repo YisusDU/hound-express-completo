@@ -15,8 +15,18 @@ const defaultState: GuidesState = {
   menuDisplay: false,
   modalData: { guideNumber: "", typeModal: "" },
   stages: [],
-  status: ASYNC_STATUS.IDLE,
-  error: null,
+
+  listStatus: ASYNC_STATUS.IDLE,
+  listError: null,
+
+  createStatus: ASYNC_STATUS.IDLE,
+  createError: null,
+
+  updateStatus: ASYNC_STATUS.IDLE,
+  updateError: null,
+
+  stagesStatus: ASYNC_STATUS.IDLE,
+  stagesError: null,
 };
 
 const renderWithStore = (overrides = {}) => {

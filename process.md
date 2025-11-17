@@ -2794,7 +2794,7 @@ Se actualiza el subcomponente UpdateTable y se añade lógica para descomponer l
 
 - \proyect-partner-company-m66\01-frontend\houndxpress2\src\components\Modals\ModalUpdate\UpdateTable\index.tsx
 
-```ts 
+```ts
 import React from "react";
 import { Guide } from "../../../../types/guides";
 import { UpdateTableContainer } from "./styles";
@@ -2879,8 +2879,851 @@ export default UpdateTable;
 
 ## Debuggin
 
-Iniciamos la etapa de debugeo y pulido general 
+Iniciamos la etapa de debugeo y pulido general
 
 ### filteredGuides.map is not a function
 
 Lo primero que me salta al cargar la app con el backend corriendo es el error encabezado, el backend responde con estatus 200 por lo que creo que es la forma en la que el backend está devolviendo las respuestas, en una lista con data seguido de otra lista con la info
+
+Como lo sospechaba, la respuesta envuelta del backend en data estaba perjudicando mi app, por lo que estandaricé las respuestás exitosas
+
+- \proyect-partner-company-m66\02-backend\houndxpress3\src\api\views.py
+
+```python
+from django.shortcuts import render
+from rest_framework import status 
+from rest_framework.response import Response 
+from rest_framework.viewsets import ViewSet #<-- import ViewSet
+from django.shortcuts import get_object_or_404 #<-- import get_object_or_404
+from rest_framework.decorators import action
+
+from houndexpress.models import Guia, Estatus
+from django.contrib.auth.models import User
+
+from houndexpress.serializers import GuideSerializer, UserSerializer, EstatusSerializer
+
+# ViewSet for Guia model
+class GuideViewSet(ViewSet):
+    """ViewSet para listar guias"""
+    serializer_class = GuideSerializer
+
+    def list(self, request):
+        """"Lista todas las guías"""
+        guides = Guia.objects.all()
+        serializer = self.serializer_class(guides, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+  
+
+    def create(self, request):
+        """Crea una guia"""
+        serializer = self.serializer_class(data = request.data)
+
+        if not serializer.is_valid():
+            data = serializer.errors
+            return Response({"data": data}, status=status.HTTP_400_BAD_REQUEST)
+    
+        serializer.save(current_status="Creado")
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+  
+    def retrieve(self, request, pk=None):
+        """Maneja obtener una guia por su ID"""
+        guide = get_object_or_404(Guia, pk=pk)  
+        message = f"Obteniendo la guia por su ID {pk}"
+        data = GuideSerializer(guide).data
+    
+        return Response(data, status=status.HTTP_200_OK)
+  
+    def update(self, request, pk=None):
+        """Maneja la actualización de una guia por su ID"""
+        guide = get_object_or_404(Guia, pk=pk)  
+        serializer = self.serializer_class(guide, data=request.data, partial=False)
+    
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+  
+    def partial_update(self, request, pk=None):
+        """Maneja la actualización parcial de una guia por su ID"""
+        guide = get_object_or_404(Guia, pk=pk)  
+        serializer = self.serializer_class(guide, data=request.data, partial=True)
+    
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+        message = f"Actualizando la guia con ID {pk}"
+        serializer.save()
+        data = serializer.data
+        return Response({"message": message, "data": data}, status=status.HTTP_200_OK)
+  
+    def destroy(self, request, pk=None):
+        """Maneja la eliminación de una guia por su ID"""
+        guide = get_object_or_404(Guia, pk=pk)
+        guide.delete()
+        message = f"La guia con ID {pk} se eliminó correctamente"
+        return Response({"message": message}, status=status.HTTP_200_OK)
+
+
+# ViewSet for User model
+class UserViewSet(ViewSet):
+    """ViewSet para listar usuarios"""
+    serializer_class = UserSerializer #<-- we can use the ProductSerializer for simplicity
+    def list(self, request):
+        """Lista todos los usuarios"""
+        users = User.objects.all()
+        serializer = self.serializer_class(users, many=True)
+        message = [
+            "Lista de usuarios",
+             serializer.data  
+            ]
+        return Response({"message": message}, status=status.HTTP_200_OK)
+
+    def create(self, request):
+        """Crea un mensaje de saludo"""
+        serializer = self.serializer_class(data = request.data)
+        if serializer.is_valid():
+            serializer.save()
+            data = serializer.data
+            message = [
+                "Creando un usuario con los siguientes datos:",
+                data
+            ]
+            return Response({"message": message}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def retrieve(self, request, pk=None):
+        """Maneja obtener un objeto por su ID"""
+        user = get_object_or_404(User, pk=pk)
+        message = {
+            "message": "Obteniendo un usuario por su ID",
+            "data": {
+                "id": pk,
+                "serializer": UserSerializer(user).data
+            }
+        }
+        return Response({"message": message}, status=status.HTTP_200_OK)
+  
+
+    def update(self, request, pk=None):
+        """Maneja la actualización completa de un objeto por su ID"""
+        user = get_object_or_404(User, pk=pk)
+        serializer = self.serializer_class(user, data=request.data, partial=False)
+    
+        if not serializer.is_valid():
+            return Response(
+                serializer.errors, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
+        user = serializer.save()
+    
+        return Response({
+            "message": f"Usuario con ID {pk} actualizado correctamente",
+            "data": UserSerializer(user).data
+        }, status=status.HTTP_200_OK)
+
+
+    def partial_update(self, request, pk=None):
+        """Maneja la actualización parcial de un objeto por su ID"""
+        user = get_object_or_404(User, pk=pk)
+        serializer = self.serializer_class(user, data=request.data, partial=True)
+
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.save()
+        data = serializer.validated_data
+        message = [
+            f"Actualizando parcialmente el usuario con ID {pk}",
+            data
+        ]
+        return Response({"message": message}, status=status.HTTP_200_OK)
+  
+    def destroy(self, request, pk=None):
+        """Maneja la eliminación de un objeto por su ID"""
+        user = get_object_or_404(User, pk=pk)
+        user.delete()
+        message = f"Eliminando el usuario con ID {pk}"
+        return Response({"message": message}, status=status.HTTP_200_OK)
+  
+
+class EstatusViewSet(ViewSet):
+    """ViewSet para listar los Estatus"""
+    serializer_class = EstatusSerializer  
+  
+    def list(self, request):
+        """Listar todos los estatus"""
+        estatus = Estatus.objects.all()
+        serializer = self.serializer_class(estatus, many = True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+  
+    def create(self, request):
+        """Crear un nuevo estatus"""
+        serializer = self.serializer_class(data=request.data)  
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+  
+    def retrieve(self, request, pk=None):
+        """Obtener un estatus específico"""
+        queryset = Estatus.objects.select_related('guide', 'updatedBy').all()
+        estatus = get_object_or_404(queryset, pk=pk)
+        serializer = self.serializer_class(estatus)  
+        return Response(serializer.data, status=status.HTTP_200_OK)
+  
+    def update(self, request, pk=None):
+        """Actualizar completamente un estatus"""
+        queryset = Estatus.objects.select_related('guide', 'updatedBy').all()
+        estatus = get_object_or_404(queryset, pk=pk)
+    
+        serializer = self.serializer_class(estatus, data=request.data, partial=False)  
+    
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+    
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+  
+   # Dado que solo manejamos un campo en realidad, no tiene sentido usar partial_update
+  
+    def destroy(self, request, pk=None):
+        """Eliminar un estatus"""
+        queryset = Estatus.objects.all()
+        estatus = get_object_or_404(queryset, pk=pk)
+    
+        estatus.delete()
+    
+        return Response(
+            {'message': f'Estatus con id {pk} eliminado correctamente'},
+            status=status.HTTP_204_NO_CONTENT
+        )
+    # Una url especial para hacer retrive por el trackingNumber
+    @action(detail=False, methods=['get'], url_path='by-tracking/(?P<tracking>[^/.]+)')
+    def by_tracking(self, request, tracking=None):
+        """Endpoint dedicado para buscar por tracking"""
+        queryset = Estatus.objects.select_related('guide_data').filter(
+            guide_data__guide_number__iexact=tracking
+        ).order_by('-timestamp')
+    
+        if not queryset.exists():
+            return Response(
+                {'error': f'No se encontraron estatus para el tracking: {tracking}'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+    
+        serializer = self.serializer_class(queryset, many=True)  
+    
+        return Response(serializer.data)
+```
+
+### Bug al intentar actualizar estado
+
+Había un error en la forma en que estaba nombrando e campo que manda el id de la guía por actualizar, lo renombramos en Front Y Backen a guide_id pero en backend le añadimos un campo source que apunta a guide_data por debajo para que funcione, solo es  por saber qué se esta mandando
+
+- \proyect-partner-company-m66\02-backend\houndxpress3\src\houndexpress\serializers.py
+
+```python
+class EstatusSerializer(ModelSerializer):
+    guide_detail = GuideSerializer(source='guide_data', read_only=True)
+  
+    guide_id = serializers.PrimaryKeyRelatedField(
+        queryset=Guia.objects.all(),
+        write_only=True,
+        label = "Número de rastreo",
+        source='guide_data',
+        error_messages={
+            'does_not_exist': 'La guía con ID {pk_value} no existe en el sistema',
+            'incorrect_type': 'El ID de la guía debe ser un número entero',
+            'required': 'El campo Número de rastreo es obligatorio'
+        }
+    )
+  
+```
+
+Adicionalmente, la función que valida el formulario del nuevo estado estaba buscando campos que ya no existen, por lo que fallaba, los eliminamos
+
+- \proyect-partner-company-m66\01-frontend\houndxpress2\src\hooks\useUpdateForm.ts
+
+```ts
+//Validate the form on submit
+  const handleValidate = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+    console.log("Se llamó handleValidate")
+
+    //validate all the fields empty
+    const requiredFields = ["guide__status"];
+    const { isValid } = validateFields(requiredFields, formData, setErrors);
+```
+
+### Manejo de errores
+
+Lo ví venir, y me ha alcanzado, dado que todas las peticiones que hacemos guardan sus errores en la misma variable del estado error, si falla el crear una guía, el error se ve abajo del formulario y en la lista de guías, quiza podemos generar una variable para que cada acción asíncrona para sus errores, tipo errorList, errorCreate,errorUpdate
+
+Para conservar la estructura del proyectom decidí seguir manejando todo en un mismo Slice, pero con estados y errores individuales para cada acción, comenzando por los tipos
+
+- \proyect-partner-company-m66\01-frontend\houndxpress2\src\state\types.ts
+
+```ts 
+export interface GuidesState {
+  guides: ApiGuidePayload[];
+  menuDisplay: boolean;
+  modalData: InfoModalData;
+  stages: ApiStagesPayload[];
+  
+  // --- Estados Sectorizados ---
+
+  // Sector para LISTAR (fetchGuides)
+  listStatus: string;
+  listError: ApiError | string | null;
+
+  // Sector para CREAR (createGuide)
+  createStatus: string;
+  createError: ApiError | string | null;
+
+  // Sector para ACTUALIZAR (updateStatus)
+  updateStatus: string;
+  updateError: ApiError | string | null;
+  
+  // Sector para HISTORIAL (fetchStages)
+  stagesStatus: string;
+  stagesError: ApiError | string | null;
+}
+```
+
+Corrigiendo el Slcie
+
+- \proyect-partner-company-m66\01-frontend\houndxpress2\src\state\guides.slice.ts
+
+```ts
+import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import {
+  ApiError,
+  ApiGuidePayload,
+  ApiStagesPayload,
+  GuideFormPayload,
+  GuidesState,
+  InfoModalData,
+  StagePayload,
+  UpdatePayload,
+} from "./types";
+import { Guide } from "../types/guides";
+import { GuideStage } from "../components/GuideReguister/types";
+import {
+  CREATE_GUIDE,
+  FETCH_GUIDES,
+  FETCH_STAGES,
+  UPDATE_STATUS,
+} from "../constants/actionTypes";
+import axios from "axios";
+import api from "../api";
+import { ASYNC_STATUS } from "../constants/asyncStatus";
+
+// Peticiones asíncronas
+
+// Crear guías
+export const createGuide = createAsyncThunk<
+  ApiGuidePayload,
+  GuideFormPayload,
+  { rejectValue: ApiError | string }
+>(CREATE_GUIDE, async (guidePayload, { rejectWithValue }) => {
+  try {
+    const response = await api.post<ApiGuidePayload>(
+      "/api/v1/guides/",
+      guidePayload
+    );
+    return response.data;
+  } catch (error) {
+    // 1. Verificamos si es un error de Axios
+    if (axios.isAxiosError(error)) {
+      // 2. Si NO hay 'error.response', es un error de red
+      if (!error.response) {
+        return rejectWithValue(error.message); // error.message es un string
+      }
+
+      // 3. Si SÍ hay 'error.response', es un error del backend (4xx, 5xx)
+      // Sabemos que 'error.response.data' será de tipo 'ApiError'
+      return rejectWithValue(error.response.data as ApiError);
+    } else {
+      // No es un error de Axios (ej. un error de sintaxis en el 'try')
+      return rejectWithValue("Ocurrió un error inesperado");
+    }
+  }
+});
+
+// Listar guías
+export const fetchGuides = createAsyncThunk<
+  ApiGuidePayload[],
+  void,
+  { rejectValue: ApiError | string }
+>(FETCH_GUIDES, async (_, { rejectWithValue }) => {
+  try {
+    const response = await api.get<ApiGuidePayload[]>("/api/v1/guides/");
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      if (!error.response) {
+        return rejectWithValue(error.message);
+      }
+      return rejectWithValue(error.response.data as ApiError);
+    } else {
+      return rejectWithValue("Ocurrió un error inesperado");
+    }
+  }
+});
+
+// Listar estados de una guía
+export const fetchStages = createAsyncThunk<
+  ApiStagesPayload[],
+  StagePayload,
+  { rejectValue: ApiError | string }
+>(FETCH_STAGES, async (guideNumber, { rejectWithValue }) => {
+  try {
+    const response = await api.get<ApiStagesPayload[]>(
+      `/api/v1/estatus/by-tracking/${guideNumber}/`
+    );
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      if (!error.response) {
+        return rejectWithValue(error.message);
+      }
+      return rejectWithValue(error.response.data as ApiError);
+    } else {
+      return rejectWithValue("Ocurrió un error inesperado");
+    }
+  }
+});
+
+// Actualizar guías
+export const updateStatus = createAsyncThunk<
+  ApiStagesPayload,
+  UpdatePayload,
+  { rejectValue: ApiError | string }
+>(UPDATE_STATUS, async (newGuideStage, { rejectWithValue }) => {
+  try {
+    const response = await api.post<ApiStagesPayload>(
+      "/api/v1/estatus/",
+      newGuideStage
+    );
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      if (!error.response) {
+        return rejectWithValue(error.message);
+      }
+      return rejectWithValue(error.response.data as ApiError);
+    } else {
+      return rejectWithValue("Ocurrió un error inesperado");
+    }
+  }
+});
+
+//Global Initial State
+const initialState: GuidesState = {
+  guides: [],
+  stages: [],
+  menuDisplay: false,
+  modalData: { guideNumber: "", typeModal: "" },
+
+  listStatus: ASYNC_STATUS.IDLE,
+  listError: null,
+
+  createStatus: ASYNC_STATUS.IDLE,
+  createError: null,
+
+  updateStatus: ASYNC_STATUS.IDLE,
+  updateError: null,
+
+  stagesStatus: ASYNC_STATUS.IDLE,
+  stagesError: null,
+};
+
+const guidesSlice = createSlice({
+  name: "guidesState",
+  initialState,
+  reducers: {
+    toggleMenu: (state, action: PayloadAction<boolean>) => {
+      state.menuDisplay = action.payload;
+    },
+    changeModalData: (state, action: PayloadAction<InfoModalData>) => {
+      state.modalData = action.payload;
+    },
+    // Acción para resetear el estado del formulario de CREACIÓN
+    resetCreateStatus: (state) => {
+      state.createStatus = ASYNC_STATUS.IDLE;
+      state.createError = null;
+    },
+    // Acción para resetear el estado del formulario de ACTUALIZACIÓN
+    resetUpdateStatus: (state) => {
+      state.updateStatus = ASYNC_STATUS.IDLE;
+      state.updateError = null;
+    },
+  },
+  extraReducers: (builder) => {
+    builder
+      // Crear guías
+      .addCase(createGuide.pending, (state) => {
+        state.createStatus = ASYNC_STATUS.PENDING;
+        state.createError = null;
+      })
+      .addCase(createGuide.fulfilled, (state, action) => {
+        state.createStatus = ASYNC_STATUS.FULFILLED;
+        // Actualizamos el estado de 'guides'
+        state.guides.unshift(action.payload);
+      })
+      .addCase(createGuide.rejected, (state, action) => {
+        state.createStatus = ASYNC_STATUS.REJECTED;
+        state.createError =
+          (action.payload as ApiError | string) || "Error al crear la guía";
+      })
+      // Listar guías
+      .addCase(fetchGuides.pending, (state) => {
+        state.listStatus = ASYNC_STATUS.PENDING;
+        state.listError = null;
+      })
+      .addCase(fetchGuides.fulfilled, (state, action) => {
+        state.listStatus = ASYNC_STATUS.FULFILLED;
+        state.guides = action.payload;
+      })
+      .addCase(fetchGuides.rejected, (state, action) => {
+        state.listStatus = ASYNC_STATUS.REJECTED;
+        state.listError =
+          (action.payload as ApiError | string) || "Error al listar guías";
+      })
+      // Listar estados
+      .addCase(fetchStages.pending, (state) => {
+        state.stagesStatus = ASYNC_STATUS.PENDING;
+        state.stagesError = null;
+      })
+      .addCase(fetchStages.fulfilled, (state, action) => {
+        state.stagesStatus = ASYNC_STATUS.FULFILLED;
+        state.stages = action.payload;
+      })
+      .addCase(fetchStages.rejected, (state, action) => {
+        state.stagesStatus = ASYNC_STATUS.REJECTED;
+        state.stagesError =
+          (action.payload as ApiError | string) || "Error al cargar historial";
+      })
+      // Actualizar estado
+      .addCase(updateStatus.pending, (state) => {
+        state.updateStatus = ASYNC_STATUS.PENDING;
+        state.updateError = null;
+      })
+      .addCase(updateStatus.fulfilled, (state) => {
+        state.updateStatus = ASYNC_STATUS.FULFILLED;
+      })
+      .addCase(updateStatus.rejected, (state, action) => {
+        state.updateStatus = ASYNC_STATUS.REJECTED;
+        state.updateError =
+          (action.payload as ApiError | string) || "Error al actualizar";
+      });
+  },
+});
+
+export const {
+  toggleMenu,
+  changeModalData,
+  resetCreateStatus, 
+  resetUpdateStatus, 
+} = guidesSlice.actions;
+
+//Reducer for the store
+export default guidesSlice.reducer;
+
+```
+
+Y actualizando las referencia al estado de redux de cada componente
+
+Realmente fue algo facíl lo de actualizar la referencia de estado y error, así que no pegaré el codigo
+
+### GuideList Fecha y hora
+
+He nota que la fecha y hora aún se muestran en un formato un poco técnico, lo voy a simplificar
+
+- \proyect-partner-company-m66\01-frontend\houndxpress2\src\components\GuideList\index.tsx
+
+```ts
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import {
+  GuideListContainer,
+  GuideFilter,
+  GuideTable,
+  TableHeader,
+  TableData,
+  TableButtonsContainer,
+} from "./styles";
+import useDraggTable from "../../hooks/useDraggTable";
+import { useAppSelector, useAppDispatch } from "../../hooks/useStoreTypes";
+import { changeModalData, fetchGuides } from "../../state/guides.slice";
+import { useModalGuides } from "../../hooks/useModalGuides";
+import { ASYNC_STATUS } from "../../constants/asyncStatus";
+import ServerError from "../ServerError";
+
+const GuideList = () => {
+  //Variables to aply some filter
+  const [filter, setFilter] = useState<string>("");
+
+  //Function to dragg the table on scroll, it needs styles of overflow
+  const tableRef = useDraggTable();
+
+  //Redux state
+  const guides = useAppSelector((state) => state.guides.guides);
+  const status = useAppSelector((state) => state.guides.listStatus);
+  const error = useAppSelector((state) => state.guides.listError);
+  const dispatch = useAppDispatch();
+  const updateButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  type ModalType = "History" | "Update";
+
+  const openModal = (guide: string, type: ModalType) => {
+    dispatch(changeModalData({ guideNumber: guide, typeModal: type }));
+
+    // Guardar el botón activo para usarlo luego
+  };
+
+  // Disparamos la operación asíncrona para listar guías
+  useEffect(() => {
+    status === ASYNC_STATUS.IDLE && dispatch(fetchGuides());
+  }, [dispatch, status]);
+
+  // Filtrar guías por estatus
+  const filteredGuides = useMemo(() => {
+    const cleanFilter = filter.toLowerCase();
+
+    // Si el filtro está vacío, devuelve todas
+    if (cleanFilter === "") {
+      return guides;
+    }
+
+    // Si no, filtra por coincidencia exacta
+    return guides.filter((g) => g.current_status.toLowerCase() === cleanFilter);
+  }, [guides, filter]);
+
+  //Function for accesibility of aria-expanded
+  const [ariaExpanded, setAriaExpanded] = useState(false);
+  const modalFilled1 = useAppSelector(
+    (state) => state.guides.modalData.guideNumber
+  );
+  const modalFilled2 = useAppSelector(
+    (state) => state.guides.modalData.typeModal
+  );
+
+  useEffect(() => {
+    if (modalFilled1 === "" && modalFilled2 === "") {
+      setAriaExpanded(false);
+    } else {
+      setAriaExpanded(true);
+    }
+  }, [modalFilled1, modalFilled2]);
+
+  return (
+    /* <!--Lista de guías--> */
+    <GuideListContainer className="guide__list" id="guide__list">
+      <h2 className="list__title">Lista de guías</h2>
+      <GuideFilter role="form" action="#" onSubmit={(e) => e.preventDefault()}>
+        <label htmlFor="filterState">Filtrar por estado de envío:</label>
+        <select
+          name="filterState"
+          id="filterState"
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          aria-controls="mainTable"
+          aria-label="Filtrar por estado de envío:"
+          title="Filtrar por estado de envío:"
+        >
+          <option value="">Mostrar todos</option>
+          <option value="Pendiente">Pendientes</option>
+          <option value="En tránsito">En tránsito</option>
+          <option value="Entregado">Entregados</option>
+        </select>
+        <button
+          type="button"
+          onClick={() => setFilter("")}
+          role="button"
+          aria-label="Limpiar filtro"
+          title="Limpiar filtro"
+          aria-controls="mainTable"
+        >
+          Limpiar filtro
+        </button>
+      </GuideFilter>
+      <section ref={tableRef} className="list__tableContainer">
+        <GuideTable id="mainTable" className="guide__table" cellPadding={5}>
+          <TableHeader className="table__header">
+            <tr className="table__header--row">
+              <th className="guide__table--header">Número de guía</th>
+              <th className="guide__table--header">Estado actual</th>
+              <th className="guide__table--header">Origen</th>
+              <th className="guide__table--header">Destino</th>
+              <th className="guide__table--header">Destinatario</th>
+              <th className="guide__table--header">
+                Fecha de la última actualización.
+              </th>
+              <th className="guide__table--header">Opciones</th>
+            </tr>
+          </TableHeader>
+          <tbody data-testid="table-body" className="table__body">
+            {status === ASYNC_STATUS.FULFILLED &&
+              filteredGuides.map((g, index) => {
+                const dateObj = new Date(g.updated_at);
+                const fecha = dateObj.toLocaleDateString("es-MX", {
+                  day: "2-digit",
+                  month: "2-digit",
+                  year: "numeric",
+                });
+                const hora = dateObj.toLocaleTimeString("en-US", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  hour12: true,
+                });
+
+                return (
+                  <tr className="guide__table--row" key={g.guide_number}>
+                    <TableData
+                      className="guide__table--data"
+                      data-label="Número de guía"
+                    >
+                      {g.guide_number}
+                    </TableData>
+
+                    <TableData
+                      className="guide__table--data"
+                      data-label="Estado actual"
+                    >
+                      {g.current_status}
+                    </TableData>
+
+                    <TableData
+                      className="guide__table--data"
+                      data-label="Origen"
+                    >
+                      {g.guide_origin}
+                    </TableData>
+
+                    <TableData
+                      className="guide__table--data"
+                      data-label="Destino"
+                    >
+                      {g.guide_destination}
+                    </TableData>
+
+                    <TableData
+                      className="guide__table--data"
+                      data-label="Destinatario"
+                    >
+                      {g.guide_recipient}
+                    </TableData>
+
+                    <TableData
+                      className="guide__table--data"
+                      data-label="Fecha"
+                    >
+                      {`${fecha} ${hora}`}
+                    </TableData>
+
+                    <TableButtonsContainer
+                      className="guide__table--data list__buttonsContainer"
+                      data-label="Opciones"
+                    >
+                      <button
+                        ref={(el) => {
+                          updateButtonRefs.current[index] = el;
+                        }}
+                        className="guide__button guideButton--seeHistory"
+                        onClick={() => openModal(g.guide_number, "History")}
+                        type="button"
+                        role="button"
+                        aria-label={`Ver historial de la guía ${g.guide_number}`}
+                        title={`Ver historial de la guía ${g.guide_number}`}
+                        aria-haspopup="dialog"
+                        aria-controls="modalHistory"
+                        aria-expanded={ariaExpanded ? true : false}
+                      >
+                        Ver Historial
+                      </button>
+                      <button
+                        ref={(el) => {
+                          updateButtonRefs.current[index] = el;
+                        }}
+                        className="guide__button guide__button--updateState"
+                        onClick={() => openModal(g.guide_number, "Update")}
+                        type="button"
+                        role="button"
+                        aria-label={`Actualizar estado de la guía ${g.guide_number}`}
+                        title={`Actualizar estado de la guía ${g.guide_number}`}
+                        aria-haspopup="dialog"
+                        aria-controls="modalUpdate"
+                        aria-expanded={ariaExpanded ? true : false}
+                      >
+                        Actualizar Estado
+                      </button>
+                    </TableButtonsContainer>
+                  </tr>
+                );
+              })}
+            {status === ASYNC_STATUS.PENDING && (
+              <div>
+                <h2>Loading... 🥱</h2>
+              </div>
+            )}
+            {status === ASYNC_STATUS.REJECTED && <ServerError error={error} />}
+          </tbody>
+        </GuideTable>
+      </section>
+    </GuideListContainer>
+  );
+};
+
+export default GuideList;
+
+```
+
+### Actualizar estado cuando El modal Updata es exitoso
+
+Cuando hacemos un post, y es exitoso, sale el mensaje de que se actualizó la guía, pero seguimos viendo que tiene el mismo estado, es por eso que forzamos un dispatch de fetchGuides en el try cath, esto obliga a recargar las guías, que es de donde se toman los datos para el modal, a la vez que actualiza el listado de guías ante actualizaciones
+
+- \proyect-partner-company-m66\01-frontend\houndxpress2\src\hooks\useUpdateForm.ts
+
+```
+try {
+      await dispatch(updateStatus(newGuideStage)).unwrap();
+      await dispatch(fetchGuides());
+      alert("Guía actualizada con éxito");
+```
+
+### Actualización de GuideList en cambio de estado
+
+Le he preguntado a gemini que hacer y me ha dado dos buenas opciones, una instantánea y otra para el futuro, por ahora solo haré la instantéa que es quitar la dependencia del estado para despachar el fetchGuides, la otra opcion es usar RTK Query
+
+>
+> #### La Solución Profesional: RTK Query (Refetch on Focus)
+>
+> Este es mi consejo de 10 rupias. La herramienta que ya estás usando (Redux Toolkit) tiene una "herramienta hermana" para reemplazar tus `createAsyncThunk` manuales. Se llama  **RTK Query** .
+>
+> En lugar de escribir  *thunks* , *reducers* de `pending/fulfilled/rejected` y `initialState` para los errores... simplemente defines un  *endpoint* :
+>
+> const api = createApi({
+>   // ...
+>   endpoints: (builder) => ({
+>     getGuides: builder.query<ApiGuidePayload[], void>({
+>       query: () => "/api/v1/guides/",
+>     }),
+>   }),
+> });
+
+Solo haré este pequeño cambio de momento, pero es bueno conocer otros horizontes
+
+- \proyect-partner-company-m66\01-frontend\houndxpress2\src\components\GuideList\index.tsx
+
+```ts
+  // Disparamos la operación asíncrona para listar guías
+  useEffect(() => {
+    dispatch(fetchGuides());
+  }, [dispatch, ]);
+```
+
+### Bug en Estado General
+
+### Filtrar por número de guía

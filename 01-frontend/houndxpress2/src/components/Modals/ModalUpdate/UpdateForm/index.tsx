@@ -71,9 +71,9 @@ const UpdateForm = ({ focusableEls }: RefEls) => {
             </option>
             <option
               className="tableModal__form--option option--2"
-              value="Pentiente"
+              value="Pendiente"
             >
-              Pentiente 📦
+              Pendiente 📦
             </option>
             <option
               className="tableModal__form--option option--2"

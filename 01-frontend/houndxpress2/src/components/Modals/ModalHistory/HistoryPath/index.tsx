@@ -18,9 +18,9 @@ const HistoryPath = () => {
   const dispatch = useAppDispatch();
 
   const guides = useAppSelector((state) => state.guides.guides);
-  const status = useAppSelector((state) => state.guides.status);
+  const status = useAppSelector((state) => state.guides.stagesStatus);
   const stages = useAppSelector((state) => state.guides.stages);
-  const error = useAppSelector((state) => state.guides.error);
+  const error = useAppSelector((state) => state.guides.stagesError);
   const guideNumber = useAppSelector(
     (state) => state.guides.modalData.guideNumber
   );

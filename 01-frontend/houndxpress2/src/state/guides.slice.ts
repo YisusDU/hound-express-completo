@@ -124,109 +124,111 @@ export const updateStatus = createAsyncThunk<
 //Global Initial State
 const initialState: GuidesState = {
   guides: [],
+  stages: [],
   menuDisplay: false,
   modalData: { guideNumber: "", typeModal: "" },
-  stages: [],
-  status: ASYNC_STATUS.IDLE,
-  error: null,
+
+  listStatus: ASYNC_STATUS.IDLE,
+  listError: null,
+
+  createStatus: ASYNC_STATUS.IDLE,
+  createError: null,
+
+  updateStatus: ASYNC_STATUS.IDLE,
+  updateError: null,
+
+  stagesStatus: ASYNC_STATUS.IDLE,
+  stagesError: null,
 };
 
 const guidesSlice = createSlice({
   name: "guidesState",
   initialState,
   reducers: {
-    // addGuide: (state, action: PayloadAction<Guide>) => {
-    //   state.guides.unshift(action.payload);
-    // },
-    // updateGuide: (state, action: PayloadAction<GuideStage>) => {
-    //   const guide = state.guides.find(
-    //     (g) => g.guide_number === state.modalData.guideNumber
-    //   );
-    //   if (guide) {
-    //     guide.guide_stage.push(action.payload);
-    //   }
-    // },
     toggleMenu: (state, action: PayloadAction<boolean>) => {
       state.menuDisplay = action.payload;
     },
     changeModalData: (state, action: PayloadAction<InfoModalData>) => {
       state.modalData = action.payload;
     },
+    // Acción para resetear el estado del formulario de CREACIÓN
+    resetCreateStatus: (state) => {
+      state.createStatus = ASYNC_STATUS.IDLE;
+      state.createError = null;
+    },
+    // Acción para resetear el estado del formulario de ACTUALIZACIÓN
+    resetUpdateStatus: (state) => {
+      state.updateStatus = ASYNC_STATUS.IDLE;
+      state.updateError = null;
+    },
   },
   extraReducers: (builder) => {
     builder
       // Crear guías
       .addCase(createGuide.pending, (state) => {
-        state.status = ASYNC_STATUS.PENDING;
+        state.createStatus = ASYNC_STATUS.PENDING;
+        state.createError = null;
       })
-      .addCase(createGuide.fulfilled, (state) => {
-        state.status = ASYNC_STATUS.FULFILLED;
+      .addCase(createGuide.fulfilled, (state, action) => {
+        state.createStatus = ASYNC_STATUS.FULFILLED;
+        // Actualizamos el estado de 'guides'
+        state.guides.unshift(action.payload);
       })
       .addCase(createGuide.rejected, (state, action) => {
-        state.status = ASYNC_STATUS.REJECTED;
-        // Si usas rejectWithValue, el error viene en .payload
-        if (action.payload) {
-          state.error = action.payload;
-        } else {
-          // Si es un error no manejado, usa .error.message
-          state.error = action.error.message || "Ocurrió un error desconocido";
-        }
+        state.createStatus = ASYNC_STATUS.REJECTED;
+        state.createError =
+          (action.payload as ApiError | string) || "Error al crear la guía";
       })
       // Listar guías
       .addCase(fetchGuides.pending, (state) => {
-        state.status = ASYNC_STATUS.PENDING;
+        state.listStatus = ASYNC_STATUS.PENDING;
+        state.listError = null;
       })
       .addCase(fetchGuides.fulfilled, (state, action) => {
-        state.status = ASYNC_STATUS.FULFILLED;
+        state.listStatus = ASYNC_STATUS.FULFILLED;
         state.guides = action.payload;
       })
       .addCase(fetchGuides.rejected, (state, action) => {
-        state.status = ASYNC_STATUS.REJECTED;
-        if (action.payload) {
-          state.error = action.payload;
-        } else {
-          state.error = action.error.message || "Ocurrió un error desconocido";
-        }
+        state.listStatus = ASYNC_STATUS.REJECTED;
+        state.listError =
+          (action.payload as ApiError | string) || "Error al listar guías";
       })
       // Listar estados
       .addCase(fetchStages.pending, (state) => {
-        state.status = ASYNC_STATUS.PENDING;
+        state.stagesStatus = ASYNC_STATUS.PENDING;
+        state.stagesError = null;
       })
       .addCase(fetchStages.fulfilled, (state, action) => {
-        state.status = ASYNC_STATUS.FULFILLED;
+        state.stagesStatus = ASYNC_STATUS.FULFILLED;
         state.stages = action.payload;
       })
       .addCase(fetchStages.rejected, (state, action) => {
-        state.status = ASYNC_STATUS.REJECTED;
-        if (action.payload) {
-          state.error = action.payload;
-        } else {
-          state.error = action.error.message || "Ocurrió un error desconocido";
-        }
+        state.stagesStatus = ASYNC_STATUS.REJECTED;
+        state.stagesError =
+          (action.payload as ApiError | string) || "Error al cargar historial";
       })
       // Actualizar estado
       .addCase(updateStatus.pending, (state) => {
-        state.status = ASYNC_STATUS.PENDING;
+        state.updateStatus = ASYNC_STATUS.PENDING;
+        state.updateError = null;
       })
       .addCase(updateStatus.fulfilled, (state) => {
-        state.status = ASYNC_STATUS.FULFILLED;
+        state.updateStatus = ASYNC_STATUS.FULFILLED;
       })
       .addCase(updateStatus.rejected, (state, action) => {
-        state.status = ASYNC_STATUS.REJECTED;
-        // Si usas rejectWithValue, el error viene en .payload
-        if (action.payload) {
-          state.error = action.payload;
-        } else {
-          // Si es un error no manejado, usa .error.message
-          state.error = action.error.message || "Ocurrió un error desconocido";
-        }
+        state.updateStatus = ASYNC_STATUS.REJECTED;
+        state.updateError =
+          (action.payload as ApiError | string) || "Error al actualizar";
       });
   },
 });
 
-//Actions by name
-export const { /* addGuide, */ toggleMenu, changeModalData /* updateGuide */ } =
-  guidesSlice.actions;
+export const {
+  toggleMenu,
+  changeModalData,
+  resetCreateStatus, 
+  resetUpdateStatus, 
+} = guidesSlice.actions;
 
 //Reducer for the store
 export default guidesSlice.reducer;

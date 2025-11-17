@@ -198,7 +198,7 @@ const Header = forwardRef<HTMLElement>(({}, ref) => {
                 🔍 Buscar Guías
               </a>
             </li>
-            <li>
+            {/* <li>
               <a
                 className="header__link"
                 href="#"
@@ -209,7 +209,7 @@ const Header = forwardRef<HTMLElement>(({}, ref) => {
               >
                 Historial de Guías
               </a>
-            </li>
+            </li> */}
 
             <div className="header__lineDecorative" aria-hidden="true"></div>
           </HeaderLinksContainer>

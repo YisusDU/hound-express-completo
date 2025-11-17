@@ -23,8 +23,8 @@ const GuideList = () => {
 
   //Redux state
   const guides = useAppSelector((state) => state.guides.guides);
-  const status = useAppSelector((state) => state.guides.status);
-  const error = useAppSelector((state) => state.guides.error);
+  const status = useAppSelector((state) => state.guides.listStatus);
+  const error = useAppSelector((state) => state.guides.listError);
   const dispatch = useAppDispatch();
   const updateButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
   type ModalType = "History" | "Update";
@@ -37,8 +37,8 @@ const GuideList = () => {
 
   // Disparamos la operación asíncrona para listar guías
   useEffect(() => {
-    status === ASYNC_STATUS.IDLE && dispatch(fetchGuides());
-  }, [dispatch, status]);
+    dispatch(fetchGuides());
+  }, [dispatch, ]);
 
   // Filtrar guías por estatus
   const filteredGuides = useMemo(() => {
@@ -118,83 +118,103 @@ const GuideList = () => {
           </TableHeader>
           <tbody data-testid="table-body" className="table__body">
             {status === ASYNC_STATUS.FULFILLED &&
-              filteredGuides.map((g, index) => (
-                <tr className="guide__table--row" key={g.guide_number}>
-                  <TableData
-                    className="guide__table--data"
-                    data-label="Número de guía"
-                  >
-                    {g.guide_number}
-                  </TableData>
+              filteredGuides.map((g, index) => {
+                const dateObj = new Date(g.updated_at);
+                const fecha = dateObj.toLocaleDateString("es-MX", {
+                  day: "2-digit",
+                  month: "2-digit",
+                  year: "numeric",
+                });
+                const hora = dateObj.toLocaleTimeString("en-US", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  hour12: true,
+                });
 
-                  <TableData
-                    className="guide__table--data"
-                    data-label="Estado actual"
-                  >
-                    {g.current_status}
-                  </TableData>
-
-                  <TableData className="guide__table--data" data-label="Origen">
-                    {g.guide_origin}
-                  </TableData>
-
-                  <TableData
-                    className="guide__table--data"
-                    data-label="Destino"
-                  >
-                    {g.guide_destination}
-                  </TableData>
-
-                  <TableData
-                    className="guide__table--data"
-                    data-label="Destinatario"
-                  >
-                    {g.guide_recipient}
-                  </TableData>
-
-                  <TableData className="guide__table--data" data-label="Fecha">
-                    {g.updated_at}
-                  </TableData>
-
-                  <TableButtonsContainer
-                    className="guide__table--data list__buttonsContainer"
-                    data-label="Opciones"
-                  >
-                    <button
-                      ref={(el) => {
-                        updateButtonRefs.current[index] = el;
-                      }}
-                      className="guide__button guideButton--seeHistory"
-                      onClick={() => openModal(g.guide_number, "History")}
-                      type="button"
-                      role="button"
-                      aria-label={`Ver historial de la guía ${g.guide_number}`}
-                      title={`Ver historial de la guía ${g.guide_number}`}
-                      aria-haspopup="dialog"
-                      aria-controls="modalHistory"
-                      aria-expanded={ariaExpanded ? true : false}
+                return (
+                  <tr className="guide__table--row" key={g.guide_number}>
+                    <TableData
+                      className="guide__table--data"
+                      data-label="Número de guía"
                     >
-                      Ver Historial
-                    </button>
-                    <button
-                      ref={(el) => {
-                        updateButtonRefs.current[index] = el;
-                      }}
-                      className="guide__button guide__button--updateState"
-                      onClick={() => openModal(g.guide_number, "Update")}
-                      type="button"
-                      role="button"
-                      aria-label={`Actualizar estado de la guía ${g.guide_number}`}
-                      title={`Actualizar estado de la guía ${g.guide_number}`}
-                      aria-haspopup="dialog"
-                      aria-controls="modalUpdate"
-                      aria-expanded={ariaExpanded ? true : false}
+                      {g.guide_number}
+                    </TableData>
+
+                    <TableData
+                      className="guide__table--data"
+                      data-label="Estado actual"
                     >
-                      Actualizar Estado
-                    </button>
-                  </TableButtonsContainer>
-                </tr>
-              ))}
+                      {g.current_status}
+                    </TableData>
+
+                    <TableData
+                      className="guide__table--data"
+                      data-label="Origen"
+                    >
+                      {g.guide_origin}
+                    </TableData>
+
+                    <TableData
+                      className="guide__table--data"
+                      data-label="Destino"
+                    >
+                      {g.guide_destination}
+                    </TableData>
+
+                    <TableData
+                      className="guide__table--data"
+                      data-label="Destinatario"
+                    >
+                      {g.guide_recipient}
+                    </TableData>
+
+                    <TableData
+                      className="guide__table--data"
+                      data-label="Fecha"
+                    >
+                      {`${fecha} ${hora}`}
+                    </TableData>
+
+                    <TableButtonsContainer
+                      className="guide__table--data list__buttonsContainer"
+                      data-label="Opciones"
+                    >
+                      <button
+                        ref={(el) => {
+                          updateButtonRefs.current[index] = el;
+                        }}
+                        className="guide__button guideButton--seeHistory"
+                        onClick={() => openModal(g.guide_number, "History")}
+                        type="button"
+                        role="button"
+                        aria-label={`Ver historial de la guía ${g.guide_number}`}
+                        title={`Ver historial de la guía ${g.guide_number}`}
+                        aria-haspopup="dialog"
+                        aria-controls="modalHistory"
+                        aria-expanded={ariaExpanded ? true : false}
+                      >
+                        Ver Historial
+                      </button>
+                      <button
+                        ref={(el) => {
+                          updateButtonRefs.current[index] = el;
+                        }}
+                        className="guide__button guide__button--updateState"
+                        onClick={() => openModal(g.guide_number, "Update")}
+                        type="button"
+                        role="button"
+                        aria-label={`Actualizar estado de la guía ${g.guide_number}`}
+                        title={`Actualizar estado de la guía ${g.guide_number}`}
+                        aria-haspopup="dialog"
+                        aria-controls="modalUpdate"
+                        aria-expanded={ariaExpanded ? true : false}
+                      >
+                        Actualizar Estado
+                      </button>
+                    </TableButtonsContainer>
+                  </tr>
+                );
+              })}
             {status === ASYNC_STATUS.PENDING && (
               <div>
                 <h2>Loading... 🥱</h2>

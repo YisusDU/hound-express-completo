@@ -19,9 +19,7 @@ class GuideViewSet(ViewSet):
         """"Lista todas las guías"""
         guides = Guia.objects.all()
         serializer = self.serializer_class(guides, many=True)
-        message = "Lista de guias"
-        data = serializer.data
-        return Response({"message": message, "data": data}, status=status.HTTP_200_OK)
+        return Response(serializer.data, status=status.HTTP_200_OK)
   
 
     def create(self, request):
@@ -32,10 +30,8 @@ class GuideViewSet(ViewSet):
             data = serializer.errors
             return Response({"data": data}, status=status.HTTP_400_BAD_REQUEST)
         
-        serializer.save(current_status="Pendiente")
-        message = "Creando una guia"
-        data = serializer.data
-        return Response({"message": message, "data": data}, status=status.HTTP_201_CREATED)
+        serializer.save(current_status="Creado")
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
       
     def retrieve(self, request, pk=None):
         """Maneja obtener una guia por su ID"""
@@ -43,7 +39,7 @@ class GuideViewSet(ViewSet):
         message = f"Obteniendo la guia por su ID {pk}"
         data = GuideSerializer(guide).data
         
-        return Response({"message": message, "data": data}, status=status.HTTP_200_OK)
+        return Response(data, status=status.HTTP_200_OK)
   
     def update(self, request, pk=None):
         """Maneja la actualización de una guia por su ID"""
@@ -52,11 +48,7 @@ class GuideViewSet(ViewSet):
         
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
-        message = f"Actualizando la guia con ID {pk}"
-        serializer.save()
-        data = serializer.data
-        return Response({"message": message, "data": data}, status=status.HTTP_200_OK)
+        return Response(serializer.data, status=status.HTTP_200_OK)
   
     def partial_update(self, request, pk=None):
         """Maneja la actualización parcial de una guia por su ID"""
@@ -169,17 +161,15 @@ class EstatusViewSet(ViewSet):
         """Listar todos los estatus"""
         estatus = Estatus.objects.all()
         serializer = self.serializer_class(estatus, many = True)
-        message = "Lista de Estatus"
-        return Response({"message": message, "data": serializer.data}, status=status.HTTP_200_OK)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     
     def create(self, request):
         """Crear un nuevo estatus"""
         serializer = self.serializer_class(data=request.data)  
         if serializer.is_valid():
-            message = "Estatus creado con éxito"
-            serializer.save(updatedBy=request.user)
-            return Response({"message": message, "data": serializer.data}, status=status.HTTP_201_CREATED)
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
@@ -188,8 +178,7 @@ class EstatusViewSet(ViewSet):
         queryset = Estatus.objects.select_related('guide', 'updatedBy').all()
         estatus = get_object_or_404(queryset, pk=pk)
         serializer = self.serializer_class(estatus)  
-        message = "Estatus obtenido con éxito"
-        return Response({"message": message, "data": serializer.data}, status=status.HTTP_200_OK)
+        return Response(serializer.data, status=status.HTTP_200_OK)
     
     def update(self, request, pk=None):
         """Actualizar completamente un estatus"""
@@ -199,9 +188,8 @@ class EstatusViewSet(ViewSet):
         serializer = self.serializer_class(estatus, data=request.data, partial=False)  
         
         if serializer.is_valid():
-            serializer.save(updatedBy=request.user)
-            message = f"Estatus con id {pk} actualizado con éxito"
-            return Response({"message": message, "data": serializer.data}, status=status.HTTP_200_OK)
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
@@ -234,8 +222,4 @@ class EstatusViewSet(ViewSet):
         
         serializer = self.serializer_class(queryset, many=True)  
         
-        return Response({
-            'tracking': tracking,
-            'count': queryset.count(),
-            'results': serializer.data
-        })
+        return Response(serializer.data)

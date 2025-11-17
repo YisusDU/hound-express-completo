@@ -151,14 +151,15 @@ class UserSerializer(ModelSerializer):
 class EstatusSerializer(ModelSerializer):
     guide_detail = GuideSerializer(source='guide_data', read_only=True)
     
-    guide_data = serializers.PrimaryKeyRelatedField(
+    guide_id = serializers.PrimaryKeyRelatedField(
         queryset=Guia.objects.all(),
         write_only=True,
         label = "Número de rastreo",
+        source='guide_data',
         error_messages={
             'does_not_exist': 'La guía con ID {pk_value} no existe en el sistema',
             'incorrect_type': 'El ID de la guía debe ser un número entero',
-            'required': 'El campo guía es obligatorio'
+            'required': 'El campo Número de rastreo es obligatorio'
         }
     )
     
@@ -166,7 +167,7 @@ class EstatusSerializer(ModelSerializer):
         model = Estatus
         fields = [
             'id',
-            'guide_data',
+            'guide_id',
             'guide_detail',
             'guide_status',
             'timestamp',
@@ -216,8 +217,8 @@ class EstatusSerializer(ModelSerializer):
         # En CREATE: validar que no exista ya un estatus con el mismo status para esta guía
         if not self.instance and guide and new_status:
             existe_duplicado = Estatus.objects.filter(
-                guide=guide,
-                status=new_status
+                guide_data=guide,
+                guide_status=new_status
             ).exists()
             
             if existe_duplicado:

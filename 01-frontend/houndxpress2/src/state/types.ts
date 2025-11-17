@@ -5,8 +5,24 @@ export interface GuidesState {
   menuDisplay: boolean;
   modalData: InfoModalData;
   stages: ApiStagesPayload[];
-  status: string;
-  error: ApiError | string | null;
+  
+  // --- Estados Sectorizados ---
+
+  // Sector para LISTAR (fetchGuides)
+  listStatus: string;
+  listError: ApiError | string | null;
+
+  // Sector para CREAR (createGuide)
+  createStatus: string;
+  createError: ApiError | string | null;
+
+  // Sector para ACTUALIZAR (updateStatus)
+  updateStatus: string;
+  updateError: ApiError | string | null;
+  
+  // Sector para HISTORIAL (fetchStages)
+  stagesStatus: string;
+  stagesError: ApiError | string | null;
 }
 
 export interface InfoModalData {
@@ -52,6 +68,6 @@ export type StagePayload = string;
 
 // Lo que envíamos para actualizar estados
 export type UpdatePayload = {
-  id: number;
+  guide_id: number;
   guide_status: string;
 };
