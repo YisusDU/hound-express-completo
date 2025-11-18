@@ -1,0 +1,21 @@
+{
+  "files": {
+    "main.js": "/hound-express-completo/static/js/main.a2f15a15.js",
+    "static/media/Animacion-beneficios-sistema-v2.gif": "/hound-express-completo/static/media/Animacion-beneficios-sistema-v2.4cfed981b0ba6cd1f0e8.gif",
+    "static/media/bannerUS__HX.png": "/hound-express-completo/static/media/bannerUS__HX.51d8943a999392154fa8.png",
+    "static/media/bannerCanva-HX.png": "/hound-express-completo/static/media/bannerCanva-HX.8960f45642a3d0d32a6a.png",
+    "static/media/logoAzulBlancoHE.png": "/hound-express-completo/static/media/logoAzulBlancoHE.dfd0131e9b9d6e929bf2.png",
+    "static/media/logo-Hound_Express-bg-white.png": "/hound-express-completo/static/media/logo-Hound_Express-bg-white.3ed9e37efea17fdd8ba5.png",
+    "index.html": "/hound-express-completo/index.html",
+    "static/media/instagram-brands.svg": "/hound-express-completo/static/media/instagram-brands.4d8a38f58905dd8d798d1f4cb7345f0a.svg",
+    "static/media/paw-solid.svg": "/hound-express-completo/static/media/paw-solid.89c15e618204231793ef9480f1826923.svg",
+    "static/media/twitter-brands.svg": "/hound-express-completo/static/media/twitter-brands.41d824740f05c76ecfb43f6b6a68ba2e.svg",
+    "static/media/x-solid.svg": "/hound-express-completo/static/media/x-solid.54d989207062f09204a6c15b95971c50.svg",
+    "static/media/bars-solid.svg": "/hound-express-completo/static/media/bars-solid.fdc10d4a9bd26f9f7b830a0fceadc11b.svg",
+    "static/media/square-facebook-brands.svg": "/hound-express-completo/static/media/square-facebook-brands.afd0161519394995b690f09ddb2ad7b3.svg",
+    "main.a2f15a15.js.map": "/hound-express-completo/static/js/main.a2f15a15.js.map"
+  },
+  "entrypoints": [
+    "static/js/main.a2f15a15.js"
+  ]
+}
