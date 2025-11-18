@@ -9,6 +9,8 @@ import {
 } from "./styles";
 import { useCleanErrorOnFocus } from "../../../../hooks/useCleanErrorOnFocus";
 import { useAppSelector } from "../../../../hooks/useStoreTypes";
+import { ASYNC_STATUS } from "../../../../constants/asyncStatus";
+import ServerError from "../../../ServerError";
 
 interface RefEls {
   focusableEls: HTMLElement[];
@@ -16,6 +18,8 @@ interface RefEls {
 
 const UpdateForm = ({ focusableEls }: RefEls) => {
   //Redux state
+  const status = useAppSelector((state) => state.guides.updateStatus);
+  const error = useAppSelector((state) => state.guides.updateError);
   const UpdateModalOpen = useAppSelector(
     (state) => state.guides.modalData.typeModal
   );
@@ -26,7 +30,6 @@ const UpdateForm = ({ focusableEls }: RefEls) => {
   }) */
   //Function to clear errors on focus
   const clearErrosOnFocus = useCleanErrorOnFocus(errors, setErrors);
-
 
   //Make a focus trap for the links container
   const handleKeyDown = (e: React.KeyboardEvent<HTMLFormElement>) => {
@@ -48,7 +51,9 @@ const UpdateForm = ({ focusableEls }: RefEls) => {
 
   return (
     <ModalUpdateContainer>
-      {currentGuide?.current_status !== "Entregado" && (
+      {!["Cancelado", "Entregado"].includes(
+        currentGuide?.current_status || ""
+      ) && (
         <ModalForm
           action="#"
           className="tableModal__form"
@@ -106,10 +111,15 @@ const UpdateForm = ({ focusableEls }: RefEls) => {
           </ModalFormSubmit>
         </ModalForm>
       )}
-      {currentGuide?.current_status === "Entregado" && (
+      {(currentGuide?.current_status === "Entregado" ||
+        currentGuide?.current_status === "Cancelado") && (
         <ModalMessage>
-          *Tu envío ya fue entregado, no es posible actualizar su estado*
+          *Tu envío fue {currentGuide.current_status}, no es posible actualizar
+          su estado*
         </ModalMessage>
+      )}
+      {status === ASYNC_STATUS.REJECTED && (
+        <p>Hubo un problema al actualizar tu guía</p>
       )}
     </ModalUpdateContainer>
   );

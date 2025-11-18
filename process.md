@@ -2921,7 +2921,7 @@ class GuideViewSet(ViewSet):
         if not serializer.is_valid():
             data = serializer.errors
             return Response({"data": data}, status=status.HTTP_400_BAD_REQUEST)
-    
+  
         serializer.save(current_status="Creado")
         return Response(serializer.data, status=status.HTTP_201_CREATED)
   
@@ -2930,14 +2930,14 @@ class GuideViewSet(ViewSet):
         guide = get_object_or_404(Guia, pk=pk)  
         message = f"Obteniendo la guia por su ID {pk}"
         data = GuideSerializer(guide).data
-    
+  
         return Response(data, status=status.HTTP_200_OK)
   
     def update(self, request, pk=None):
         """Maneja la actualización de una guia por su ID"""
         guide = get_object_or_404(Guia, pk=pk)  
         serializer = self.serializer_class(guide, data=request.data, partial=False)
-    
+  
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -2946,10 +2946,10 @@ class GuideViewSet(ViewSet):
         """Maneja la actualización parcial de una guia por su ID"""
         guide = get_object_or_404(Guia, pk=pk)  
         serializer = self.serializer_class(guide, data=request.data, partial=True)
-    
+  
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+  
         message = f"Actualizando la guia con ID {pk}"
         serializer.save()
         data = serializer.data
@@ -2989,7 +2989,7 @@ class UserViewSet(ViewSet):
             ]
             return Response({"message": message}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+  
     def retrieve(self, request, pk=None):
         """Maneja obtener un objeto por su ID"""
         user = get_object_or_404(User, pk=pk)
@@ -3007,15 +3007,15 @@ class UserViewSet(ViewSet):
         """Maneja la actualización completa de un objeto por su ID"""
         user = get_object_or_404(User, pk=pk)
         serializer = self.serializer_class(user, data=request.data, partial=False)
-    
+  
         if not serializer.is_valid():
             return Response(
                 serializer.errors, 
                 status=status.HTTP_400_BAD_REQUEST
             )
-    
+  
         user = serializer.save()
-    
+  
         return Response({
             "message": f"Usuario con ID {pk} actualizado correctamente",
             "data": UserSerializer(user).data
@@ -3062,7 +3062,7 @@ class EstatusViewSet(ViewSet):
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-    
+  
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
   
     def retrieve(self, request, pk=None):
@@ -3076,13 +3076,13 @@ class EstatusViewSet(ViewSet):
         """Actualizar completamente un estatus"""
         queryset = Estatus.objects.select_related('guide', 'updatedBy').all()
         estatus = get_object_or_404(queryset, pk=pk)
-    
+  
         serializer = self.serializer_class(estatus, data=request.data, partial=False)  
-    
+  
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
-    
+  
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
   
    # Dado que solo manejamos un campo en realidad, no tiene sentido usar partial_update
@@ -3091,9 +3091,9 @@ class EstatusViewSet(ViewSet):
         """Eliminar un estatus"""
         queryset = Estatus.objects.all()
         estatus = get_object_or_404(queryset, pk=pk)
-    
+  
         estatus.delete()
-    
+  
         return Response(
             {'message': f'Estatus con id {pk} eliminado correctamente'},
             status=status.HTTP_204_NO_CONTENT
@@ -3105,15 +3105,15 @@ class EstatusViewSet(ViewSet):
         queryset = Estatus.objects.select_related('guide_data').filter(
             guide_data__guide_number__iexact=tracking
         ).order_by('-timestamp')
-    
+  
         if not queryset.exists():
             return Response(
                 {'error': f'No se encontraron estatus para el tracking: {tracking}'},
                 status=status.HTTP_404_NOT_FOUND
             )
-    
+  
         serializer = self.serializer_class(queryset, many=True)  
-    
+  
         return Response(serializer.data)
 ```
 
@@ -3166,7 +3166,7 @@ Para conservar la estructura del proyectom decidí seguir manejando todo en un m
 
 - \proyect-partner-company-m66\01-frontend\houndxpress2\src\state\types.ts
 
-```ts 
+```ts
 export interface GuidesState {
   guides: ApiGuidePayload[];
   menuDisplay: boolean;
@@ -3697,7 +3697,6 @@ try {
 
 Le he preguntado a gemini que hacer y me ha dado dos buenas opciones, una instantánea y otra para el futuro, por ahora solo haré la instantéa que es quitar la dependencia del estado para despachar el fetchGuides, la otra opcion es usar RTK Query
 
->
 > #### La Solución Profesional: RTK Query (Refetch on Focus)
 >
 > Este es mi consejo de 10 rupias. La herramienta que ya estás usando (Redux Toolkit) tiene una "herramienta hermana" para reemplazar tus `createAsyncThunk` manuales. Se llama  **RTK Query** .
@@ -3705,12 +3704,12 @@ Le he preguntado a gemini que hacer y me ha dado dos buenas opciones, una instan
 > En lugar de escribir  *thunks* , *reducers* de `pending/fulfilled/rejected` y `initialState` para los errores... simplemente defines un  *endpoint* :
 >
 > const api = createApi({
->   // ...
->   endpoints: (builder) => ({
->     getGuides: builder.query<ApiGuidePayload[], void>({
->       query: () => "/api/v1/guides/",
->     }),
->   }),
+> // ...
+> endpoints: (builder) => ({
+> getGuides: builder.query<ApiGuidePayload[], void>({
+> query: () => "/api/v1/guides/",
+> }),
+> }),
 > });
 
 Solo haré este pequeño cambio de momento, pero es bueno conocer otros horizontes
@@ -3791,3 +3790,7 @@ Quiero añadir un filtro con memoria para buscar por número de guía entre las 
     return tempGuides;
   }, [guides, filterState, filterNumber]);
 ```
+
+## El deploy, la última prueba
+
+Será más fácil de lo que pensaba, pues solo es crear el build y gh-pages hace casi todo lo demás GG

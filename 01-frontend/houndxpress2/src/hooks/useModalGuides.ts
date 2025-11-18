@@ -1,4 +1,4 @@
-import { changeModalData } from "../state/guides.slice";
+import { changeModalData, resetUpdateStatus } from "../state/guides.slice";
 import { useAppDispatch } from "./useStoreTypes";
 
 const useModalGuides = () => {
@@ -6,6 +6,7 @@ const useModalGuides = () => {
 
   const cleanGuideData = () => {
     dispatch(changeModalData({ guideNumber: "", typeModal: "" }));
+    dispatch(resetUpdateStatus());
 
     // Devolver foco al primer elemento interactivo visible (que no esté oculto)
     const focusable = Array.from(

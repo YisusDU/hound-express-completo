@@ -54,7 +54,7 @@ const useUpdateForm = () => {
       form.reset();
     } catch (rejectedValue) {
       console.error("Falló al actualiar la guía:", rejectedValue);
-      alert("There was an error creating your order. Please try again.");
+      alert("There was an error updating your order.");
       if (typeof rejectedValue === "object" && rejectedValue !== null) {
         // Transforma el ApiError en el estado de errores local
         const backendErrors: { [key: string]: string } = {};

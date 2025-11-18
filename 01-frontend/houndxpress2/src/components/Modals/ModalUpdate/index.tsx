@@ -2,20 +2,11 @@ import React, { SetStateAction, useEffect, useRef, useState } from "react";
 import { ModalUpdateContainer } from "./styles";
 import UpdateTable from "./UpdateTable";
 import UpdateForm from "./UpdateForm";
-import { Guide } from "../../../types/guides";
 import { useModalGuides } from "../../../hooks/useModalGuides";
 import XIcon from "../../../assets/IMG/x-solid.svg";
 import { useAppSelector } from "../../../hooks/useStoreTypes";
-import { ApiGuidePayload } from "../../../state/types";
 
-// export interface ModalUpdateProp {
-//   modalData: string;
-//   guides: ApiGuidePayload[];
-//   setGuides: React.Dispatch<SetStateAction<ApiGuidePayload[]>>;
-//   setModalData: React.Dispatch<SetStateAction<string>>;
-//   isOpenModal: string;
-//   setIsOpenModal: React.Dispatch<SetStateAction<"Update" | "History" | "">>;
-// }
+
 
 const ModalUpdate = () => {
   //Redux state typeModal

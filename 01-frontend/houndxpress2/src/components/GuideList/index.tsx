@@ -244,6 +244,7 @@ const GuideList = () => {
                   </tr>
                 );
               })}
+            {status === ASYNC_STATUS.FULFILLED && filteredGuides.length === 0 && (<p> No hay Guías para mostrar</p>)}
             {status === ASYNC_STATUS.PENDING && (
               <div>
                 <h2>Loading... 🥱</h2>

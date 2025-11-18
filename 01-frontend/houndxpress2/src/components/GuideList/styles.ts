@@ -85,7 +85,7 @@ const GuideTable = styled.table`
   border-spacing: 2px;
   border-collapse: separate;
 
-  @media screen and (max-width: ${sizesMedia.xmd}) {
+  @media screen and (max-width: ${sizesMedia.lg}) {
     thead {
       display: none;
     }
