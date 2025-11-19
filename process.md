@@ -3794,3 +3794,9 @@ Quiero añadir un filtro con memoria para buscar por número de guía entre las 
 ## El deploy, la última prueba
 
 Será más fácil de lo que pensaba, pues solo es crear el build y gh-pages hace casi todo lo demás GG
+
+## Futuras consideraciones
+
+- El sistema de RTK Query para actualizar los elementos que dependen del contenido de la base de datos es muy interesante y es una buena opción
+- Agregar el BrowserRotuer para navegación y añadir un componente para listar todos los cambios de estado de todas las guías
+- Agregar un sistema de usuarios y autenticación con JWT

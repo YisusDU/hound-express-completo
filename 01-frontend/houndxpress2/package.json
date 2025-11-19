@@ -2,7 +2,7 @@
   "name": "houndxpress1",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://yisusdu.github.io/houndxpress-full/",
+  "homepage": "https://yisusdu.github.io/hound-express-completo",
   "dependencies": {
     "@reduxjs/toolkit": "^2.8.2",
     "@testing-library/dom": "^10.4.0",
