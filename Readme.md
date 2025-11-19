@@ -9,7 +9,7 @@
 ![Django](https://img.shields.io/badge/Django-REST-092E20?style=flat&logo=django&logoColor=white)
 ![Styled Components](https://img.shields.io/badge/Styled_Components-v6-DB7093?style=flat&logo=styled-components&logoColor=white)
 
-![1763511168051](image/Readme/1763511168051.png)
+<img width="1920" height="1440" alt="image" src="https://github.com/user-attachments/assets/6e15fe9c-b9b5-4420-b1bf-29a391b6c31d" />
 
 A comprehensive logistics and tracking Single-Page Application (SPA) built with React and TypeScript, integrated with a Django REST Framework backend for real-time package management.
 
@@ -109,3 +109,4 @@ const filteredGuides = useMemo(() => {
 
 > [!Note]
 > You can check the full documentation [Here](https://deepwiki.com/YisusDU/hound-express-completo)
+
