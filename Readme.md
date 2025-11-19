@@ -9,7 +9,7 @@
 ![Django](https://img.shields.io/badge/Django-REST-092E20?style=flat&logo=django&logoColor=white)
 ![Styled Components](https://img.shields.io/badge/Styled_Components-v6-DB7093?style=flat&logo=styled-components&logoColor=white)
 
-<img src="01-frontend/houndxpress2/src/assets/IMG/preview-hound-express.webp" alt="general preview" width="100%">
+![1763511168051](image/Readme/1763511168051.png)
 
 A comprehensive logistics and tracking Single-Page Application (SPA) built with React and TypeScript, integrated with a Django REST Framework backend for real-time package management.
 
